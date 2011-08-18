@@ -14,7 +14,7 @@
           <h1>Dwonloader</h1>
           <h2>A simple filesharing solution for everyone!</h2>
        </div><!--header -->
-       <% file_list %>       
+       <% status %>
        <a href="/logout">Logout <% name %> </a> 
     </div><!--content-->
  </div> <!-- page -->
