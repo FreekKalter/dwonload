@@ -79,14 +79,25 @@ get '/download/:id' => sub{
 
 };
 
-get '/download_file/:genrated_id' => sub{
+get '/download_file/:generated_id' => sub{
    my $gen_id = params->{generated_id};
+   debug('id: ', $gen_id);
    my $sth = database->prepare(
       'SELECT * FROM downloads WHERE download_id = ?',
    );
    $sth->execute($gen_id);
    my $return_value = $sth->fetchrow_hashref;
-   template 'download', {description => $return_value};
+   if($return_value){
+      my $dt = DateTime::Format::MySQL->parse_datetime($return_value->{'expire_time'});
+      my $dt_now = DateTime->now(time_zone => 'local');
+      if(DateTime->compare($dt_now, $dt)<1){
+         template 'download_started', {status => '<p>download started</p>'};
+      }else{
+         template 'download_started', {status => '<p class="error">download expired</p>'};
+      }
+   }else{
+      template 'download_started', {status => '<p class="error">invalid link</p>'};
+   }
 };
 
 post '/login' => sub{
