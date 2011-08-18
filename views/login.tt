@@ -1,0 +1,27 @@
+<div id="page">
+      <div id="sidebar">
+        <ul id="sidebar-items">
+          <li>
+            <h3></h3>
+            <ul class="links">
+            </ul>
+          </li>
+          
+        </ul>
+      </div>
+
+      <div id="content">
+        <div id="header">
+          <h1>Login</h1>
+          <h2>If you don't have a login, fuck you!</h2>
+        </div>
+
+        <div id="getting-started">
+         <form action="/login" method="post">
+            <p><label for="name">Username:</label> <input id="name" type="text" name="user" /> </p>
+            <p><label for="pass">Password:</label> <input type="password" name="pass" id="pass" />   </p>
+            <p class="submit"> <input type="submit" value="Login" /></p>
+         </form>
+        </div>
+      </div>
+    </div>

@@ -1,0 +1,21 @@
+<div id="page">
+      <div id="sidebar">
+        <ul id="sidebar-items">
+          <li>
+            <h3</h3>
+            <ul class="links">
+            </ul>
+          </li>
+       </ul> <!-- sidebar-items -->
+       </div> <!-- sidebar -->
+
+      <div id="content">
+        <div id="header">
+          <h1>Dwonloader</h1>
+          <h2>A simple filesharing solution for everyone!</h2>
+       </div><!--header -->
+       <% file_names %>       
+       <% file_description %>
+       <a href="/logout">Logout <% name %> </a> 
+    </div><!--content-->
+ </div> <!-- page -->
