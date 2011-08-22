@@ -31,6 +31,16 @@ get '/login' => sub{
    template 'login', {path => vars->{requested_path}};
 };
 
+post '/login' => sub{
+   if(params->{user} eq 'freek'  && params->{pass} eq 'freek')
+   {
+      session user => params->{user};
+      redirect params->{'path'} || '/';
+   }else{
+      redirect '/login?failed=1';
+   }
+};
+
 get '/files' => sub{
    my $sth = database->prepare(
       'select * from files',
@@ -92,6 +102,8 @@ get '/download_file/:generated_id' => sub{
       my $dt_now = DateTime->now(time_zone => 'local');
       if(DateTime->compare($dt_now, $dt)<1){
          template 'download_started', {status => '<p>download started</p>'};
+         #get filename from database
+         send_file('files/LCD.png');
       }else{
          template 'download_started', {status => '<p class="error">download expired</p>'};
       }
@@ -100,16 +112,6 @@ get '/download_file/:generated_id' => sub{
    }
 };
 
-post '/login' => sub{
-   if(params->{user} eq 'freek'  && params->{pass} eq 'freek')
-   {
-      session user => params->{user};
-      template 'index', {name => params->{user}}  || '/';
-      #rewrite adres bar
-   }else{
-      redirect '/login?failed=1';
-   }
-};
 
 any qr{.*} => sub {
    status 'not found';

@@ -20,6 +20,7 @@
          <form action="/login" method="post">
             <p><label for="name">Username:</label> <input id="name" type="text" name="user" /> </p>
             <p><label for="pass">Password:</label> <input type="password" name="pass" id="pass" />   </p>
+            <input type="hidden" id="path" name="path" value= <% path %> />
             <p class="submit"> <input type="submit" value="Login" /></p>
          </form>
         </div>
