@@ -32,8 +32,8 @@ engines:
 
 #session handling
 
-session: "YAML"
-
+session: "memcached"
+memcached_servers: "/tmp/memcached.socket"
 
 plugins:
    Database:

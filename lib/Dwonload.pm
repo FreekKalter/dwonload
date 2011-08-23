@@ -10,6 +10,7 @@ use DateTime::Format::Epoch;
 
 our $VERSION = '0.1';
 
+
 get '/' => sub {
     template 'index';
 };
@@ -103,7 +104,14 @@ get '/download_file/:generated_id' => sub{
       if(DateTime->compare($dt_now, $dt)<1){
          template 'download_started', {status => '<p>download started</p>'};
          #get filename from database
-         send_file('files/LCD.png');
+         $sth = database->prepare(
+            'SELECT filename FROM files WHERE id=?',
+         );
+         $sth->execute($return_value->{'id'});
+         $return_value = $sth->fetchrow_hashref;
+         if($return_value){
+           send_file('files/' . $return_value->{'filename'});
+         }
       }else{
          template 'download_started', {status => '<p class="error">download expired</p>'};
       }
