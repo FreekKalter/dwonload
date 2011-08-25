@@ -7,6 +7,7 @@ use Math::Random::MT::Perl;
 use Dancer::Logger::Console;
 use DateTime::Format::MySQL;
 use DateTime::Format::Epoch;
+use Captcha::reCAPTCHA;
 
 our $VERSION = '0.1';
 
@@ -36,7 +37,7 @@ post '/login' => sub{
    if(params->{user} eq 'freek'  && params->{pass} eq 'freek')
    {
       session user => params->{user};
-      redirect params->{'path'} || '/';
+      redirect params->{'path'} || '/files';
    }else{
       redirect '/login?failed=1';
    }
@@ -52,42 +53,69 @@ get '/files' => sub{
    my $file_list = '<ul>';
    while($sth->fetch())
    {
-      $file_list .= '<li><a href=/download/' .$id .'>'.$filename.'</a></li>';
+      $file_list .= '<li><a href=/details/' .$id .'>'.$filename.'</a></li>';
    }
    $file_list .= '</ul>';
    template 'index', {file_list => $file_list};
 };          
 
-get '/download/:id' => sub{
-   my $gen = Math::Random::MT::Perl->new();
+get '/details/:id' => sub{
    my $id = params->{id};   
-    my $sth = database->prepare(
+   my $sth = database->prepare(
       'SELECT description FROM files WHERE id = ?',
    );
    $sth->execute( $id);  
    my $row = $sth->fetchrow_hashref;
+   #recaptcha
+   my $c = Captcha::reCAPTCHA->new;
+   template 'details', {id => $id, description => $row->{'description'} ,recaptcha => $c->get_html('6LeuZMcSAAAAAIr7IWpVo6Qzh60P3yAUUSVVhq3I')};
 
-   #generate random string
-   my $string= '';
-   for(0 .. 10)
-   {
-      $string .= int($gen->rand(9));
-   }
-   debug('Generated string:', $string);
-   
-   #add this to the database with a timeout
-   $sth = database->prepare(
-      'INSERT INTO downloads VALUES (? , ? , ?)',
-   );
-   my $dt = DateTime->now(time_zone => 'local');
-   $dt->add(hours => 1);
+};
 
-   $sth->execute($id, $string,  DateTime::Format::MySQL->format_datetime($dt));
-   $string = '/download_file/' . $string;
-   template 'download', {description => $row->{'description'}, download_link => $string };
-   
-   #redirect to this page  /download_file/generated_string
+post '/details' => sub{
+    my $challenge = params->{'recaptcha_challenge_field'};
+   my $response = param->{'recaptcha_response_field'};
+   my $id = param->{'id'};   
 
+   # Verify submission
+   my $c = Captcha::reCAPTCHA->new;
+   debug('remote ip: ', $ENV{'REMOTE_ADDR'}); 
+    my $result = $c->check_answer( 
+       '6LeuZMcSAAAAAA26J5rh8Bj73F2YURdPRG9RnlQl', $ENV{'REMOTE_ADDR'},
+        $challenge, $response
+    );
+
+    if ( $result->{is_valid} ) {
+      #generate random string
+      my $gen = Math::Random::MT::Perl->new();
+      my $random_download_id= '';
+      for(0 .. 10)
+      {
+         $random_download_id .= int($gen->rand(9));
+      }
+      debug('Generated string:', $random_download_id);
+      
+      #add this to the database with a timeout
+      my $sth = database->prepare(
+         'INSERT INTO downloads VALUES (? , ? , ?)',
+      );
+      my $dt = DateTime->now(time_zone => 'local');
+      $dt->add(hours => 1);
+      $sth->execute($id, $random_download_id,  DateTime::Format::MySQL->format_datetime($dt));
+      $random_download_id = '/download_file/' . $random_download_id;
+
+      #redirect to this page  /download_file/generated_string
+      my $sth = database->prepare(
+         'SELECT description FROM files WHERE id = ?',
+      );
+      $sth->execute( $id);  
+      my $row = $sth->fetchrow_hashref;
+      template 'download', {description => $row->{'description'}, download_link => $random_download_id }; 
+    }
+    else {
+        # Error
+        print "No";
+    }                            
 };
 
 get '/download_file/:generated_id' => sub{
