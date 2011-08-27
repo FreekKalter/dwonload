@@ -13,7 +13,7 @@ our $VERSION = '0.1';
 
 
 get '/' => sub {
-    template 'index';
+    template 'files';
 };
 
 before sub{
@@ -68,8 +68,10 @@ get '/details/:id' => sub{
    my $row = $sth->fetchrow_hashref;
    #recaptcha
    my $c = Captcha::reCAPTCHA->new;
-   template 'details', {id => $id, description => $row->{'description'} ,recaptcha => $c->get_html('6LfFdMcSAAAAANNJCN8SKADPjOrnRwOm3_BmW8TI')};
-
+   template 'details', {id => $id, 
+                        description => $row->{'description'} ,
+                        recaptcha => $c->get_html('6LfFdMcSAAAAANNJCN8SKADPjOrnRwOm3_BmW8TI')
+                        }; 
 };
 
 post '/details' => sub{
