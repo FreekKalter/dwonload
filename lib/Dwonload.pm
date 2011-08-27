@@ -68,20 +68,20 @@ get '/details/:id' => sub{
    my $row = $sth->fetchrow_hashref;
    #recaptcha
    my $c = Captcha::reCAPTCHA->new;
-   template 'details', {id => $id, description => $row->{'description'} ,recaptcha => $c->get_html('6LeuZMcSAAAAAIr7IWpVo6Qzh60P3yAUUSVVhq3I')};
+   template 'details', {id => $id, description => $row->{'description'} ,recaptcha => $c->get_html('6LfFdMcSAAAAANNJCN8SKADPjOrnRwOm3_BmW8TI')};
 
 };
 
 post '/details' => sub{
     my $challenge = params->{'recaptcha_challenge_field'};
-   my $response = param->{'recaptcha_response_field'};
-   my $id = param->{'id'};   
+   my $response = params->{'recaptcha_response_field'};
+   my $id = params->{'id'};   
 
    # Verify submission
    my $c = Captcha::reCAPTCHA->new;
    debug('remote ip: ', $ENV{'REMOTE_ADDR'}); 
     my $result = $c->check_answer( 
-       '6LeuZMcSAAAAAA26J5rh8Bj73F2YURdPRG9RnlQl', $ENV{'REMOTE_ADDR'},
+       '6LfFdMcSAAAAAGM4WFn0sKeakC7ulMVDQD6Wr7xf', $ENV{'REMOTE_ADDR'},
         $challenge, $response
     );
 
@@ -110,7 +110,8 @@ post '/details' => sub{
       );
       $sth->execute( $id);  
       my $row = $sth->fetchrow_hashref;
-      template 'download', {description => $row->{'description'}, download_link => $random_download_id }; 
+      redirect $random_download_id;
+      #template 'download', {description => $row->{'description'}, download_link => $random_download_id }; 
     }
     else {
         # Error
@@ -138,7 +139,10 @@ get '/download_file/:generated_id' => sub{
          $sth->execute($return_value->{'id'});
          $return_value = $sth->fetchrow_hashref;
          if($return_value){
-           send_file('files/' . $return_value->{'filename'});
+           return send_file('files/' . $return_value->{'filename'}, 
+                           content_type => 'application/octet-stream ',
+                           filename =>  $return_value->{'filename'} );
+            template 'download_started', {status => '<p >Download started!</p>'};
          }
       }else{
          template 'download_started', {status => '<p class="error">download expired</p>'};
