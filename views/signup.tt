@@ -1,0 +1,38 @@
+<fieldset>
+   <legend>Signup</legend>
+   <form name="signup" id="signup" action="#" method="post">
+      <ul>
+         <li>
+         <label for="name" id="name_label">Name</label>
+         <input type="text" name="name" id="name" value="" class="text-input" />
+         <label class="error" for="name" id="name_error">Fill in your name.</label>
+         </li>
+         
+         <li>
+         <label for="email" id="email_label">Email</label>
+         <input type="text" name="email" id="email" value="" class="text-input" />
+         <label class="error" for="email" id="email_error">Fill in your email address.</label>
+         <label class="error" for="email" id="email_ongeldig_error">Fill in a valid email adress.</label>
+         </li>
+
+         <li>
+         <label for="password" id="password_label">Password</label>
+         <input type="password" name="password" id="password" value="" class="text-input" />
+         <label class="error" for="password" id="password_error">Fill in a valid password.</label>
+         </li>
+        
+         <li>
+         <label for="password2" id="password_label2">Re-enter</label>
+         <input type="password" name="password2" id="password2" value="" class="text-input" />
+         <label class="error" for="password2" id="password2_error">Passwords must be the same.</label>
+         </li>
+
+         <li>
+         <input type="submit" name="submit" id="submit_btn" class="button" value="Signup"  />
+         </li>
+      </ul>
+   </form>
+</fieldset>	
+<id id="response">
+
+</id>

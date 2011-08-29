@@ -13,7 +13,7 @@ our $VERSION = '0.1';
 
 
 get '/' => sub {
-    template 'files';
+    redirect '/files';
 };
 
 before sub{
@@ -154,6 +154,14 @@ get '/download_file/:generated_id' => sub{
    }
 };
 
+get '/signup' => sub{
+   template 'signup';
+};
+
+post '/signup' => sub{
+   #validate user input (again)
+   #send email to me with link to accept
+};
 
 any qr{.*} => sub {
    status 'not found';
