@@ -8,6 +8,7 @@ use Dancer::Logger::Console;
 use DateTime::Format::MySQL;
 use DateTime::Format::Epoch;
 use Captcha::reCAPTCHA;
+use Dancer::Plugin::Email;
 
 our $VERSION = '0.1';
 
@@ -107,7 +108,7 @@ post '/details' => sub{
       $random_download_id = '/download_file/' . $random_download_id;
 
       #redirect to this page  /download_file/generated_string
-      my $sth = database->prepare(
+      $sth = database->prepare(
          'SELECT description FROM files WHERE id = ?',
       );
       $sth->execute( $id);  
@@ -160,7 +161,16 @@ get '/signup' => sub{
 
 post '/signup' => sub{
    #validate user input (again)
+   
    #send email to me with link to accept
+   my $msg = "<html><body>" . join('<br>', params->{'name'} , params->{'email'}, params->{'password'}) . "</body></html>";       
+   email{
+      to => 'freekkalter@gmail.com',
+      from => 'dwonload@kalteronline.org',
+      subject => params->{'name'},
+      type => 'html',
+      message => $msg
+   };
 };
 
 any qr{.*} => sub {

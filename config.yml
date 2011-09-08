@@ -50,3 +50,11 @@ plugins:
           mysql_socket: '/Applications/MAMP/tmp/mysql/mysql.sock'
       on_connect_do: ["SET NAMES 'utf8'", "SET CHARACTER SET 'utf8'" ]
       log_queries: 1
+   Email:
+      ssl: 1
+      driver: smtp
+      host: smtp.gmail.com
+      port: 465
+      user: freekkalter@gmail.com
+      pass: dbxwuscstyywbgoq
+
