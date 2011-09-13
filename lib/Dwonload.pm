@@ -173,6 +173,10 @@ post '/signup' => sub{
    };
 };
 
+get '/adduser:user_id' => sub{
+
+};
+
 any qr{.*} => sub {
    status 'not found';
    template 'special_404', {path => request->path};
