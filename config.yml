@@ -42,12 +42,12 @@ plugins:
       host: 'localhost'
       port: 8889
       username: 'root'
-      password: 'root'
+      password: 'KoWd7pLBT'
       connection_check_threshold: 10
       dbi_params:
           RaiseError: 1
           AutoCommit: 1
-          mysql_socket: '/Applications/MAMP/tmp/mysql/mysql.sock'
+          mysql_socket: '/var/run/mysqld/mysqld.sock'
       on_connect_do: ["SET NAMES 'utf8'", "SET CHARACTER SET 'utf8'" ]
       log_queries: 1
    Email:

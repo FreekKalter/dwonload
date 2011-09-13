@@ -71,7 +71,7 @@ get '/details/:id' => sub{
    my $c = Captcha::reCAPTCHA->new;
    template 'details', {id => $id, 
                         description => $row->{'description'} ,
-                        recaptcha => $c->get_html('6LfFdMcSAAAAANNJCN8SKADPjOrnRwOm3_BmW8TI')
+                        recaptcha => $c->get_html('6LdzFcgSAAAAALE3Lsw7VTkLjYVLTDS1c2CaYBf1')
                         }; 
 };
 
@@ -84,7 +84,7 @@ post '/details' => sub{
    my $c = Captcha::reCAPTCHA->new;
    debug('remote ip: ', $ENV{'REMOTE_ADDR'}); 
     my $result = $c->check_answer( 
-       '6LfFdMcSAAAAAGM4WFn0sKeakC7ulMVDQD6Wr7xf', $ENV{'REMOTE_ADDR'},
+       '6LdzFcgSAAAAAIBJLZFXC8J7_ldwdKQZpx0IC-yd', $ENV{'REMOTE_ADDR'},
         $challenge, $response
     );
 
