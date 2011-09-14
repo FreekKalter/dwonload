@@ -15,8 +15,15 @@
           <h2>A simple filesharing solution for everyone!</h2>
        </div><!--header -->
        <% description %>
-      <% recaptcha %>
-      <% download_link %>
+       <% IF recaptcha %>
+          <form action="/details" method="post"> 
+             <input type="hidden" name="id" value = <% id %> />
+            <% recaptcha %>
+            <input type="submit" value="Download" />
+         </form>
+      <% ELSE %>
+         <% download_link %>
+      <% END %>
        <a href="/logout">Logout <% name %> </a> 
     </div><!--content-->
  </div> <!-- page -->

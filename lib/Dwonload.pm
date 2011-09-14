@@ -73,10 +73,7 @@ get '/details/:id' => sub{
       my $c = Captcha::reCAPTCHA->new;
       template 'details', {id => $id, 
                            description => $row->{'description'} ,
-                           recaptcha => '<form action="/details" method="post"> 
-                                         <input type="hidden" name="id" value = <% id %> />' . 
-                                         $c->get_html('6LdzFcgSAAAAALE3Lsw7VTkLjYVLTDS1c2CaYBf1') .
-                                         '<input type="submit" value="Download" /> </form> '
+                           recaptcha => $c->get_html('6LdzFcgSAAAAALE3Lsw7VTkLjYVLTDS1c2CaYBf1')
                            }; 
    }else{
       template 'details', {id => $id,
