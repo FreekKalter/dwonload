@@ -165,7 +165,8 @@ post '/signup' => sub{
 };
 
 get '/adduser/:user_id' => sub{
-   if(!session('user'){
+   if(!session('user'))
+   {
       #redirect to login with this path
       var requested_path => request->path_info; 
       request->path_info('/login');   
