@@ -12,17 +12,16 @@ use Dancer::Plugin::Email;
 
 our $VERSION = '0.1';
 
-
+#before sub{
+#   if (! session('user') && request->path_info !~ m{^/login}) #check if user is logged or on the login page
+#   {
+#      var requested_path => request->path_info;
+#      request->path_info('/login');
+#   }
+#};
+ 
 get '/' => sub {
     redirect '/files';
-};
-
-before sub{
-   if (! session('user') && request->path_info !~ m{^/login})
-   {
-      var requested_path => request->path_info;
-      request->path_info('/login');
-   }
 };
 
 get '/logout' => sub{
@@ -67,12 +66,21 @@ get '/details/:id' => sub{
    );
    $sth->execute( $id);  
    my $row = $sth->fetchrow_hashref;
-   #recaptcha
-   my $c = Captcha::reCAPTCHA->new;
-   template 'details', {id => $id, 
-                        description => $row->{'description'} ,
-                        recaptcha => $c->get_html('6LdzFcgSAAAAALE3Lsw7VTkLjYVLTDS1c2CaYBf1')
-                        }; 
+   
+   if(! session('user'))
+   {
+      #recaptcha
+      my $c = Captcha::reCAPTCHA->new;
+      template 'details', {id => $id, 
+                           description => $row->{'description'} ,
+                           recaptcha => $c->get_html('6LdzFcgSAAAAALE3Lsw7VTkLjYVLTDS1c2CaYBf1')
+                           }; 
+   }else{
+      template 'details', {id => $id,
+                           description => $row->{'description'},
+                           download_link => "<a href=" . &generate_temp($id) . ">Download</a>"
+                        };
+   }
 };
 
 post '/details' => sub{
@@ -89,32 +97,7 @@ post '/details' => sub{
     );
 
     if ( $result->{is_valid} ) {
-      #generate random string
-      my $gen = Math::Random::MT::Perl->new();
-      my $random_download_id= '';
-      for(0 .. 10)
-      {
-         $random_download_id .= int($gen->rand(9));
-      }
-      debug('Generated string:', $random_download_id);
-      
-      #add this to the database with a timeout
-      my $sth = database->prepare(
-         'INSERT INTO downloads VALUES (? , ? , ?)',
-      );
-      my $dt = DateTime->now(time_zone => 'local');
-      $dt->add(hours => 1);
-      $sth->execute($id, $random_download_id,  DateTime::Format::MySQL->format_datetime($dt));
-      $random_download_id = '/download_file/' . $random_download_id;
-
-      #redirect to this page  /download_file/generated_string
-      $sth = database->prepare(
-         'SELECT description FROM files WHERE id = ?',
-      );
-      $sth->execute( $id);  
-      my $row = $sth->fetchrow_hashref;
-      redirect $random_download_id;
-      #template 'download', {description => $row->{'description'}, download_link => $random_download_id }; 
+       redirect &generate_temp($id);
     }
     else {
         # Error
@@ -181,4 +164,36 @@ any qr{.*} => sub {
    status 'not found';
    template 'special_404', {path => request->path};
 };
+
+sub generate_temp
+{
+   #generate random string
+   my $id = shift;
+   my $gen = Math::Random::MT::Perl->new();
+   my $random_download_id= '';
+   for(0 .. 10)
+   {
+      $random_download_id .= int($gen->rand(9));
+   }
+   debug('Generated string:', $random_download_id);
+   
+   #add this to the database with a timeout
+   my $sth = database->prepare(
+      'INSERT INTO downloads VALUES (? , ? , ?)',
+   );
+   my $dt = DateTime->now(time_zone => 'local');
+   $dt->add(hours => 1);
+   $sth->execute($id, $random_download_id,  DateTime::Format::MySQL->format_datetime($dt));
+   $random_download_id = '/download_file/' . $random_download_id;
+
+   #redirect to this page  /download_file/generated_string
+   $sth = database->prepare(
+      'SELECT description FROM files WHERE id = ?',
+   );
+   $sth->execute( $id);  
+   my $row = $sth->fetchrow_hashref;
+   return $random_download_id;
+   #template 'download', {description => $row->{'description'}, download_link => $random_download_id }; 
+};
+
 true;
