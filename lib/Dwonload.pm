@@ -185,7 +185,7 @@ get '/activate_account/:user_id' => sub{
       {
          template 'download_started', {status => '<p>User added</p>'};
       }else{
-         template 'download_started', {status => '<p class="error">Error ' . $result '</p>'}; 
+         template 'download_started', {status => '<p class="error">Error ' . $result . '</p>'}; 
      }
 };
 
