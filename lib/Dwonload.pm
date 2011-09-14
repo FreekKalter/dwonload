@@ -149,7 +149,7 @@ post '/signup' => sub{
    #add user to database 
    my $sth = database->prepare(
       'INSERT INTO users (name, email, password, type)
-       VALUES (? , ? , ?)',
+       VALUES (? , ? , ?, ?)',
    );
    $sth->execute(params->{'name'} , params->{'email'}, sha256_hex(params->{'password'}), 'inactive');           
 
