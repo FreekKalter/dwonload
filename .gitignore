@@ -2,3 +2,4 @@ sessions/*
 *.sw*
 public/files/*
 *.DS_Store
+logs/*
