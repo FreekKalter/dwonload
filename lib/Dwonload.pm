@@ -152,7 +152,7 @@ post '/signup' => sub{
        VALUES (? , ? , ?, ?)',
    );
    $sth->execute(params->{'name'} , params->{'email'}, sha256_hex(params->{'password'}), 'inactive');           
-   my $id = $sth->last_insert_id();
+   my $id = $sth->{qw(mysql_insert_id)};
 
    #send email to me with link to accept
    my $msg = "<html><body>" . join('<br>', params->{'name'} , params->{'email'});
