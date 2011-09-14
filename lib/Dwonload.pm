@@ -179,7 +179,8 @@ get '/activate_account/:user_id' => sub{
           SET type = "user"
           WHERE id = ?',
        );
-      my $result = $sth->execute(params->{'user_id'};
+      my $result = $sth->execute(params->{'user_id'});
+
       if($result)
       {
          template 'download_started', {status => '<p>User added</p>'};
