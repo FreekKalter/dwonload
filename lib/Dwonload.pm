@@ -9,6 +9,7 @@ use DateTime::Format::MySQL;
 use DateTime::Format::Epoch;
 use Captcha::reCAPTCHA;
 use Dancer::Plugin::Email;
+use Digest::SHA qw(sha256_hex);
 
 our $VERSION = '0.1';
 
@@ -145,6 +146,13 @@ get '/signup' => sub{
 post '/signup' => sub{
    #validate user input (again)
    
+   #add user to database 
+   my $sth = database->prepare(
+      'INSERT INTO users (name, email, password, type)
+       VALUES (? , ? , ?)',
+   );
+   $sth->execute(params->{'name'} , params->{'email'}, sha256_hex(params->{'password'}), 'inactive');           
+
    #send email to me with link to accept
    my $msg = "<html><body>" . join('<br>', params->{'name'} , params->{'email'}, params->{'password'}) . "</body></html>";       
    email{
@@ -156,8 +164,17 @@ post '/signup' => sub{
    };
 };
 
-get '/adduser:user_id' => sub{
+get '/adduser/:user_id' => sub{
+   if(!session('user'){
+      #redirect to login with this path
+      var requested_path => request->path_info; 
+      request->path_info('/login');   
+   }else{
+      #find user_request in database
+            
+      #add the user to the permanent user database
 
+   }
 };
 
 any qr{.*} => sub {
@@ -195,5 +212,4 @@ sub generate_temp
    return $random_download_id;
    #template 'download', {description => $row->{'description'}, download_link => $random_download_id }; 
 };
-
 true;
