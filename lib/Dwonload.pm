@@ -152,10 +152,12 @@ post '/signup' => sub{
        VALUES (? , ? , ?, ?)',
    );
    $sth->execute(params->{'name'} , params->{'email'}, sha256_hex(params->{'password'}), 'inactive');           
+   my $id = $sth->last_insert_id();
 
    #send email to me with link to accept
-   my $msg = "<html><body>" . join('<br>', params->{'name'} , params->{'email'}, params->{'password'}) . "</body></html>";       
-   email{
+   my $msg = "<html><body>" . join('<br>', params->{'name'} , params->{'email'});
+   $msg .=  "<a href=http://192.168.2.5:3000/activate_account/". $id . ">Activate</a></body></html>";       
+   email{             
       to => 'freekkalter@gmail.com',
       from => 'dwonload@kalteronline.org',
       subject => params->{'name'},
@@ -164,18 +166,26 @@ post '/signup' => sub{
    };
 };
 
-get '/adduser/:user_id' => sub{
+get '/activate_account/:user_id' => sub{
    if(!session('user'))
    {
       #redirect to login with this path
       var requested_path => request->path_info; 
       request->path_info('/login');   
    }else{
-      #find user_request in database
-            
       #add the user to the permanent user database
-
-   }
+      my $sth = database->prepare(
+         'UPDATE users
+          SET type = "user"
+          WHERE id = ?',
+       );
+      my $result = $sth->execute(params->{'user_id'};
+      if($result)
+      {
+         template 'download_started', {status => '<p>User added</p>'};
+      }else{
+         template 'download_started', {status => '<p class="error">Error ' . $result '</p>'}; 
+     }
 };
 
 any qr{.*} => sub {
