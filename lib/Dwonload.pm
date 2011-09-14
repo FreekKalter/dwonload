@@ -187,6 +187,7 @@ get '/activate_account/:user_id' => sub{
       }else{
          template 'download_started', {status => '<p class="error">Error ' . $result . '</p>'}; 
      }
+  }
 };
 
 any qr{.*} => sub {
