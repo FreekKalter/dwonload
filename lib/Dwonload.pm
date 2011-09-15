@@ -152,11 +152,10 @@ post '/signup' => sub{
        VALUES (? , ? , ?, ?)',
    );
    $sth->execute(params->{'name'} , params->{'email'}, sha256_hex(params->{'password'}), 'inactive');           
-   my $id = $sth->{'mysql_insert_id'};
 
    #send email to me with link to accept
    my $msg = "<html><body>" . join('<br>', params->{'name'} , params->{'email'});
-   $msg .=  "<br><a href=http://192.168.2.5:3000/activate_account/". $id . ">Activate</a></body></html>";       
+   $msg .=  "<br><a href=http://192.168.2.5:3000/activate_account/". 2 . ">Activate</a></body></html>";       
    email{             
       to => 'freekkalter@gmail.com',
       from => 'dwonload@kalteronline.org',
