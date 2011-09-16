@@ -153,7 +153,7 @@ post '/signup' => sub{
    );
    $sth->execute(params->{'name'} , params->{'email'}, sha256_hex(params->{'password'}), 'inactive');
    my $dbh = database;
-   my $id = $dbh->{'mysql_insert_id'};
+   my $id = $dbh->last_insert_id(undef, undef, undef, undef); 
    debug('Last inserted id: ', $id);
 
    #send email to me with link to accept
