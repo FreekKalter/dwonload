@@ -8,6 +8,10 @@ q:before, q:after, blockquote:before, blockquote:after { content: ""; }
 // Bootstrap it!
 @import "bootstrap.less";
 
+html, body{
+   background-color: darken(staurate(@gray, 5), 10);
+}
+/*
 // Nice bod
 html, body {
   background-color: darken(saturate(@purple, 5), 10);
@@ -25,7 +29,7 @@ body, p, li {
   #font > .sans-serif(normal,15px,20px);
 }
 
-// Bangin' links
+// Bangin links
 @link-color: #fff;
 a, a:visited {
   font-weight: bold;
@@ -178,3 +182,4 @@ div.flexbox {
     #flexbox > .box-flex(1);
   }
 }
+*/
