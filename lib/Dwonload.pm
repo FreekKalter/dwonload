@@ -51,12 +51,11 @@ get '/files' => sub{
    $sth->execute();
 #     my $filenames = $sth->fetchrow_hashref;
    $sth->bind_columns( \my($id, $filename, $description));
-   my $file_list = '<ul>';
+   my $file_list = '';
    while($sth->fetch())
    {
       $file_list .= '<li><a href=/details/' .$id .'>'.$filename.'</a></li>';
    }
-   $file_list .= '</ul>';
    template 'index', {file_list => $file_list};
 };          
 
