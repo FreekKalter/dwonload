@@ -51,12 +51,11 @@ get '/files' => sub{
    $sth->execute();
 #     my $filenames = $sth->fetchrow_hashref;
    $sth->bind_columns( \my($id, $filename, $description));
-   my $file_list = '<ul>';
+   my $file_list = '';
    while($sth->fetch())
    {
       $file_list .= '<li><a href=/details/' .$id .'>'.$filename.'</a></li>';
    }
-   $file_list .= '</ul>';
    template 'index', {file_list => $file_list};
 };          
 
@@ -151,18 +150,21 @@ post '/signup' => sub{
       'INSERT INTO users (name, email, password, type)
        VALUES (? , ? , ?, ?)',
    );
-   $sth->execute(params->{'name'} , params->{'email'}, sha256_hex(params->{'password'}), 'inactive');           
+   $sth->execute(params->{'name'} , params->{'email'}, sha256_hex(params->{'password'}), 'inactive');
+   my $dbh = database;
+   my $id = $dbh->last_insert_id(undef, undef, undef, undef); 
 
    #send email to me with link to accept
-   my $msg = "<html><body>" . join('<br>', params->{'name'} , params->{'email'});
-   $msg .=  "<br><a href=http://192.168.2.5:3000/activate_account/". 2 . ">Activate</a></body></html>";       
-   email{             
-      to => 'freekkalter@gmail.com',
-      from => 'dwonload@kalteronline.org',
-      subject => params->{'name'},
-      type => 'html',
-      message => $msg
-   };
+
+#   my $msg = "<html><body>" . join('<br>', params->{'name'} , params->{'email'});
+#   $msg .=  "<br><a href=http://192.168.2.5:3000/activate_account/". 2 . ">Activate</a></body></html>";       
+#   email{             
+#      to => params->{'email'},
+#      from => 'dwonload@kalteronline.org',
+#      subject => params->{'name'},
+#      type => 'html',
+#      message => $msg
+#   };
 };
 
 get '/activate_account/:user_id' => sub{
