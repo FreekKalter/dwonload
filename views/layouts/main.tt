@@ -20,6 +20,11 @@
 
 </head>
 <body>
-   <% content %>
+   <div class="container">
+      <% content %>
+      <div id="footer">
+         &copy;Dwonloader by <span>Kalter&amp;Co</span>
+      </div>
+   </div><!--container -->
 </body>
 </html>
