@@ -156,15 +156,15 @@ post '/signup' => sub{
 
    #send email to me with link to accept
 
-#   my $msg = "<html><body>" . join('<br>', params->{'name'} , params->{'email'});
-#   $msg .=  "<br><a href=http://192.168.2.5:3000/activate_account/". 2 . ">Activate</a></body></html>";       
-#   email{             
-#      to => params->{'email'},
-#      from => 'dwonload@kalteronline.org',
-#      subject => params->{'name'},
-#      type => 'html',
-#      message => $msg
-#   };
+   my $msg = "<html><body>" . join('<br>', params->{'name'} , params->{'email'});
+   $msg .=  "<br><a href=http://192.168.2.5:3000/activate_account/". 2 . ">Activate</a></body></html>";       
+   email{             
+      to => params->{'email'},
+      from => 'dwonload@kalteronline.org',
+      subject => params->{'name'},
+      type => 'html',
+      message => $msg
+   };
 };
 
 get '/activate_account/:user_id' => sub{
