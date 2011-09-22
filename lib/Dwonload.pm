@@ -66,7 +66,7 @@ get '/details/:id' => sub{
    );
    $sth->execute( $id);  
    my $row = $sth->fetchrow_hashref;
-   debug('Session: ', session('freek')); 
+   #debug('Session: ', session('freek')); 
    if(! session('freek'))
    {
       #recaptcha

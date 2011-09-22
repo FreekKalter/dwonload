@@ -32,8 +32,7 @@ engines:
 
 #session handling
 
-session: "memcached"
-memcached_servers: "/tmp/memcached.socket"
+session: "Storable"
 
 plugins:
    Database:
