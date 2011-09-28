@@ -10,6 +10,7 @@ use DateTime::Format::Epoch;
 use Captcha::reCAPTCHA;
 use Dancer::Plugin::Email;
 use Digest::SHA qw(sha256_hex);
+use Facebook::Graph;
 
 our $VERSION = '0.1';
 
@@ -44,6 +45,25 @@ post '/login' => sub{
    }
 };
 
+get '/facebook/login' => sub { #eenmaal geauthiriseerd, vliegt door deze en postback heen
+    my $fb = Facebook::Graph->new( config->{facebook} );
+    redirect $fb
+        ->authorize
+        ->extend_permissions( qw(email offline_access publish_stream create_event rsvp_event) )
+        ->uri_as_string;
+};
+
+get '/facebook/postback/' => sub {
+    my $params = request->params;
+    my $fb = Facebook::Graph->new( config->{facebook} );
+    $fb->request_access_token($params->{code});
+    session access_token => $fb->access_token;
+    my $response = $fb->query->find('me')->request;
+    my $user = $response->as_hashref;
+    session name => $user->{name};
+    redirect '/';
+};
+
 get '/files' => sub{
    my $sth = database->prepare(
       'select * from files',
@@ -56,7 +76,7 @@ get '/files' => sub{
    {
       $file_list .= '<li><a href=/details/' .$id .'>'.$filename.'</a></li>';
    }
-   template 'index', {file_list => $file_list};
+   template 'index', {file_list => $file_list , username => session('name')};
 };          
 
 get '/details/:id' => sub{
