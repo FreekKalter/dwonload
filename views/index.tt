@@ -1,3 +1,6 @@
+<div id="login">
+   Logged in as: <% username %>
+</div>
 <div id="header">
    <h1>Dwonloader</h1>
    <h2>A simple filesharing solution for everyone!</h2>
