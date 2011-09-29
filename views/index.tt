@@ -5,7 +5,6 @@
    <h1>Dwonloader</h1>
    <h2>A simple filesharing solution for everyone!</h2>
 </div><!--header -->
-<% username %>
 <ul class="unstyled">
    <% file_list %>
 </ul>
