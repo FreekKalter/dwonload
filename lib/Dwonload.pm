@@ -11,6 +11,8 @@ use Captcha::reCAPTCHA;
 use Dancer::Plugin::Email;
 use Digest::SHA qw(sha256_hex);
 use Facebook::Graph;
+use YAML::Loader;
+use Dancer::FileUtils 'read_file_content';
 
 our $VERSION = '0.1';
 
@@ -80,6 +82,12 @@ get '/files' => sub{
 };          
 
 get '/details/:id' => sub{
+   my $content = read_file_content("../dwonload.yml");
+   my $loader = YAML::Loader->new;
+   my $hash = $loader->load($content);
+   my $recaptcha_config = $hash->{'recaptcha'}; 
+   debug('public key: ',$recaptcha_config->{'public-key'}); 
+
    my $id = params->{id};   
    my $sth = database->prepare(
       'SELECT description FROM files WHERE id = ?',
@@ -93,7 +101,7 @@ get '/details/:id' => sub{
       my $c = Captcha::reCAPTCHA->new;
       template 'details', {id => $id, 
                            description => $row->{'description'} ,
-                           recaptcha => $c->get_html('6LdzFcgSAAAAALE3Lsw7VTkLjYVLTDS1c2CaYBf1')#public recapthca key
+                           recaptcha => $c->get_html($recaptcha_config->{'public-key'} )#public recapthca key
                            }; 
    }else{
       template 'details', {id => $id,
@@ -104,6 +112,11 @@ get '/details/:id' => sub{
 };
 
 post '/details' => sub{
+   my $content = read_file_content("../dwonload.yml");
+   my $loader = YAML::Loader->new;
+   my $hash = $loader->load($content);
+   my $recaptcha_config = $hash->{'recaptcha'}; 
+
     my $challenge = params->{'recaptcha_challenge_field'};
    my $response = params->{'recaptcha_response_field'};
    my $id = params->{'id'};   
@@ -112,7 +125,7 @@ post '/details' => sub{
    my $c = Captcha::reCAPTCHA->new;
    debug('remote ip: ', request->remote_address);
     my $result = $c->check_answer( 
-       '6LdzFcgSAAAAAIBJLZFXC8J7_ldwdKQZpx0IC-yd',#private key
+       $recaptcha_config->{'private-key'},#private key
        request->remote_address,
         $challenge, $response
     );

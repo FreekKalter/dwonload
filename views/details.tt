@@ -5,6 +5,12 @@
 <div class="details">
    <% description %>
    <% IF recaptcha %>
+      <script type="text/javascript">
+       var RecaptchaOptions = {
+          theme : 'white'
+       };
+       </script>
+      
       <form action="/details" method="post"> 
       <input type="hidden" name="id" value = <% id %> />
       <% recaptcha %>
