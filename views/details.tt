@@ -12,9 +12,9 @@
        </script>
       
       <form action="/details" method="post"> 
-      <input type="hidden" name="id" value = <% id %> />
-      <% recaptcha %>
-      <!--<input type="submit" value="Download" />-->
+         <input type="hidden" name="id" value = <% id %> />
+         <% recaptcha %>
+         <input type="submit" value="Download" />
       </form>
    <% ELSE %>
       <% download_link %>
