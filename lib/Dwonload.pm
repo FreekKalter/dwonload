@@ -93,7 +93,7 @@ get '/details/:id' => sub{
       my $c = Captcha::reCAPTCHA->new;
       template 'details', {id => $id, 
                            description => $row->{'description'} ,
-                           recaptcha => $c->get_html('6LdzFcgSAAAAALE3Lsw7VTkLjYVLTDS1c2CaYBf1')
+                           recaptcha => $c->get_html('6LdzFcgSAAAAALE3Lsw7VTkLjYVLTDS1c2CaYBf1')#public recapthca key
                            }; 
    }else{
       template 'details', {id => $id,
@@ -110,9 +110,10 @@ post '/details' => sub{
 
    # Verify submission
    my $c = Captcha::reCAPTCHA->new;
-   debug('remote ip: ', $ENV{'REMOTE_ADDR'}); 
+   debug('remote ip: ', request->remote_address);
     my $result = $c->check_answer( 
-       '6LdzFcgSAAAAAIBJLZFXC8J7_ldwdKQZpx0IC-yd', $ENV{'REMOTE_ADDR'},
+       '6LdzFcgSAAAAAIBJLZFXC8J7_ldwdKQZpx0IC-yd',#private key
+       request->remote_address,
         $challenge, $response
     );
 
