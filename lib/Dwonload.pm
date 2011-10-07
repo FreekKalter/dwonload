@@ -1,16 +1,17 @@
 package Dwonload;
 use Dancer ':syntax';
 use Dancer::Plugin::Database;
+use Dancer::Plugin::Facebook;
+use Dancer::Plugin::Email;
+use Dancer::Logger::Console;
+
 use Data::Dumper;
 use Template;
+use Captcha::reCAPTCHA;
+use Digest::SHA qw(sha256_hex);
 use Math::Random::MT::Perl;
-use Dancer::Logger::Console;
 use DateTime::Format::MySQL;
 use DateTime::Format::Epoch;
-use Captcha::reCAPTCHA;
-use Dancer::Plugin::Email;
-use Digest::SHA qw(sha256_hex);
-use Facebook::Graph;
 
 our $VERSION = '0.1';
 
@@ -28,29 +29,15 @@ get '/' => sub {
 
 get '/logout' => sub{
    session->destroy;
-   redirect '/login';
+   redirect '/files';
 };
 
-get '/login' => sub{
-   template 'login', {path => vars->{requested_path}};
-};
-
-post '/login' => sub{
-   if(params->{user} eq 'freek'  && params->{pass} eq 'freek')
-   {
-      session user => params->{user};
-      redirect params->{'path'} || '/files';
-   }else{
-      redirect '/login?failed=1';
-   }
-};
 
 get '/facebook/login' => sub { #eenmaal geauthiriseerd, vliegt door deze en postback heen
     my $fb = Facebook::Graph->new( config->{facebook} );
-    redirect $fb
-        ->authorize
-        ->extend_permissions( qw(email offline_access publish_stream create_event rsvp_event) )
-        ->uri_as_string;
+    redirect $fb ->authorize
+                 ->extend_permissions( qw(email offline_access publish_stream create_event rsvp_event) )
+                 ->uri_as_string;
 };
 
 get '/facebook/postback/' => sub {
@@ -58,11 +45,51 @@ get '/facebook/postback/' => sub {
     my $fb = Facebook::Graph->new( config->{facebook} );
     $fb->request_access_token($params->{code});
     session access_token => $fb->access_token;
+
     my $response = $fb->query->find('me')->request;
     my $user = $response->as_hashref;
-    session name => $user->{name};
-    redirect '/';
+    session name => $user->{first_name};
+
+    #check if user exists in user database, if not add him
+    my $sth = database->prepare(
+            'SELECT fb_id FROM users WHERE fb_id=?',
+         );
+    $sth->execute($user->{id}) or die $sth->errstr;
+    my $row = $sth->fetchrow_hashref;
+    if(!$row) #user does not existst
+    {
+         $sth = database->prepare(
+            'INSERT INTO users (name, email, fb_id)
+             VALUES (?, ?, ?)',
+         );
+         $sth->execute($user->{first_name}, $user->{email}, $user->{id}) or die $sth->errstr;
+         
+    }
+    redirect '/me';
 };
+
+get '/me' => sub{
+   my $fb = Facebook::Graph->new( config->{facebook} );
+   $fb->access_token(session('access_token')); #get facebook access token from users session
+   my $user = $fb->fetch('me');
+
+   #generate list of uploaded files
+   my $sth = database->prepare(
+      'SELECT files.id, files.filename, files.description
+       FROM files, users
+       WHERE files.owner = users.id
+       AND users.fb_id=?',
+    );
+    $sth->execute($user->{id});
+      $sth->bind_columns( \my($id, $filename, $description ));
+      my $file_list = '';
+      while($sth->fetch())
+      {
+         $file_list .= '<li><a href=/details/' .$id .'>'.$filename.'</a></li>';
+      }
+      template 'index', {file_list => $file_list , username => session('name')};
+};
+
 
 get '/files' => sub{
    my $sth = database->prepare(
@@ -70,7 +97,7 @@ get '/files' => sub{
    );
    $sth->execute();
 #     my $filenames = $sth->fetchrow_hashref;
-   $sth->bind_columns( \my($id, $filename, $description));
+   $sth->bind_columns( \my($id, $filename, $description, $owner));
    my $file_list = '';
    while($sth->fetch())
    {
@@ -160,6 +187,21 @@ get '/download_file/:generated_id' => sub{
 
 get '/signup' => sub{
    template 'signup';
+};
+
+get '/login' => sub{
+   redirect '/facebook/login';
+   #template 'login', {path => vars->{requested_path}};
+};
+
+post '/login' => sub{
+   if(params->{user} eq 'freek'  && params->{pass} eq 'freek')
+   {
+      session user => params->{user};
+      redirect params->{'path'} || '/files';
+   }else{
+      redirect '/login?failed=1';
+   }
 };
 
 post '/signup' => sub{
