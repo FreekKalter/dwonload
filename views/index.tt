@@ -1,4 +1,4 @@
-<a href="/me"><% username %></a>
+<a href="/me" class="username">><% username %></a>
 <ul class="unstyled">
    <% file_list %>
 </ul>
