@@ -67,6 +67,10 @@ get '/facebook/postback/' => sub {
          $sth->execute($user->{first_name}, $user->{email}, $user->{id}) or die $sth->errstr;
          
     }
+    $sth = database->prepare( 'SELECT id FROM users WHERE fb_id=?');
+    $sth->execute($user->{id});
+    $row = $sth->fetchrow_hashref;
+    session user_id => $row->{id};
     redirect '/me';
 };
 
@@ -90,6 +94,19 @@ get '/me' => sub{
          $file_list .= '<li><a href=/details/' .$id .'>'.$filename.'</a></li>';
       }
       template 'me', {file_list => $file_list , username => session('name')};
+};
+
+post '/upload' => sub{
+   my $file = request->upload('datafile');
+   debug('file name: ', $file->tempname);
+   $file->link_to('public/files/' . $file->filename);
+
+   my $sth = database->prepare(
+      'INSERT INTO files (filename, description, owner)
+       VALUES (?, ?, ?)'
+    );
+    $sth->execute($file->filename, "", session('user_id')); 
+    redirect '/me';
 };
 
 

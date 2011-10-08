@@ -14,6 +14,9 @@
       <p>files shared with me<p>
    </div>
    <div id="upload">
-      <p>upload die shit</p>
+      <form id="upload-form" enctype="multipart/form-data" action="/upload" method="post">
+         <input type="file" name="datafile"></br>
+         <input type="submit" value="Upload">
+      </form>
    </div>
 </div>
