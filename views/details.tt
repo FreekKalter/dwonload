@@ -1,10 +1,18 @@
-<% description %>
-<% IF recaptcha %>
-   <form action="/details" method="post"> 
-   <input type="hidden" name="id" value = <% id %> />
-   <% recaptcha %>
-   <input type="submit" value="Download" />
-   </form>
-<% ELSE %>
-   <% download_link %>
-<% END %>
+<div class="details">
+   <p><% description %></p>
+   <% IF recaptcha %>
+      <script type="text/javascript">
+       var RecaptchaOptions = {
+          theme : 'white'
+       };
+       </script>
+      
+      <form action="/details" method="post"> 
+         <input type="hidden" name="id" value = <% id %> />
+         <% recaptcha %>
+         <input type="submit" value="Download" />
+      </form>
+   <% ELSE %>
+      <% download_link %>
+   <% END %>
+</div>
