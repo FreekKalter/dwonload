@@ -1,5 +1,5 @@
 $(document).ready(function(){
-
+   $('.tabs').tabs()
    var options = { 
      target:        '#response',   
      beforeSubmit:  validate,  

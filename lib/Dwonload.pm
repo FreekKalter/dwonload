@@ -89,7 +89,7 @@ get '/me' => sub{
       {
          $file_list .= '<li><a href=/details/' .$id .'>'.$filename.'</a></li>';
       }
-      template 'index', {file_list => $file_list , username => session('name')};
+      template 'me', {file_list => $file_list , username => session('name')};
 };
 
 

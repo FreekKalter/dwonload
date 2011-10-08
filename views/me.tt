@@ -1,0 +1,19 @@
+<ul class="tabs" data-tabs="tabs">
+   <li class="active"><a href="#shared">Files shared</a></li>
+   <li><a href="#others">Files shared with me</a></li>
+   <li><a href="#upload">Upload</a></li>
+</ul>
+      
+<div class="tab-content">
+   <div class="active" id="shared">
+      <ul class="unstyled">
+         <% file_list %>
+      </ul>
+   </div>
+   <div id="others">
+      <p>files shared with me<p>
+   </div>
+   <div id="upload">
+      <p>upload die shit</p>
+   </div>
+</div>
