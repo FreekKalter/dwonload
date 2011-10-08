@@ -12,15 +12,8 @@ use Digest::SHA qw(sha256_hex);
 use Math::Random::MT::Perl;
 use DateTime::Format::MySQL;
 use DateTime::Format::Epoch;
-<<<<<<< HEAD
-=======
-use Captcha::reCAPTCHA;
-use Dancer::Plugin::Email;
-use Digest::SHA qw(sha256_hex);
-use Facebook::Graph;
 use YAML::Loader;
 use Dancer::FileUtils 'read_file_content';
->>>>>>> login-header
 
 our $VERSION = '0.1';
 
