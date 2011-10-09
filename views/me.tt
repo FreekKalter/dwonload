@@ -11,7 +11,9 @@
       </ul>
    </div>
    <div id="others">
-      <p>files shared with me<p>
+       <ul class="unstyled">
+         <% shared_files %>
+      </ul>
    </div>
    <div class="active" id="upload">
       <form id="upload-form" enctype="multipart/form-data" action="/upload" method="post">

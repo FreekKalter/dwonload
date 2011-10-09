@@ -65,7 +65,6 @@ get '/facebook/postback/' => sub {
              VALUES (?, ?, ?)',
          );
          $sth->execute($user->{first_name}, $user->{email}, $user->{id}) or die $sth->errstr;
-         
     }
     $sth = database->prepare( 'SELECT id FROM users WHERE fb_id=?');
     $sth->execute($user->{id});
@@ -78,15 +77,17 @@ get '/me' => sub{
    my $fb = Facebook::Graph->new( config->{facebook} );
    $fb->access_token(session('access_token')); #get facebook access token from users session
    my $user = $fb->fetch('me');
+
+   #generate list of friends to share files with
    my $friends_response = $fb->query->find('me/friends')->request;
    my $friends_hash = $friends_response->as_hashref->{data};
    my @friend_array = @$friends_hash;
    my $friends = '';
-      
    foreach my $friend(@friend_array){
       $friends .= '<input type="checkbox" value="' . $friend->{'id'} . 
                   '" name="shared" >'.$friend->{name}.'</input></br>';
    }
+
    #generate list of uploaded files
    my $sth = database->prepare(
       'SELECT files.id, files.filename, files.description
@@ -101,7 +102,19 @@ get '/me' => sub{
    {
       $file_list .= '<li><a href=/details/' .$id .'>'.$filename.'</a></li>';
    }
-   template 'me', {file_list => $file_list , username => session('name'), friends => $friends};
+
+   #generate list of files shared with me
+   $sth = datbase->prepare(
+      'SELECT * FROM files
+       WHERE shared REGEXP ?');
+   $sth->execute($user->{'id'});    #try a user i know a shared a file with
+   $sth->bind_colums(($id, $filename, $description));
+   my $shared_files = '';
+   while($sth->fetch())
+   {
+      $shared_files .= '<li><a href=/details/' .$id .'>'.$filename.'</a></li>';
+   }
+   template 'me', {file_list => $file_list , username => session('name'), friends => $friends , shared => $shared_files};
 };
 
 post '/upload' => sub{
@@ -114,7 +127,6 @@ post '/upload' => sub{
        VALUES (?, ?, ?, ?)'
     );
    $sth->execute($file->filename, params->{'comment'}, session('user_id'), join(',', @shared)); 
-
    redirect '/me';
 };
 
@@ -124,7 +136,6 @@ get '/files' => sub{
       'select * from files',
    );
    $sth->execute();
-#     my $filenames = $sth->fetchrow_hashref;
    $sth->bind_columns( \my($id, $filename, $description, $owner));
    my $file_list = '';
    while($sth->fetch())
