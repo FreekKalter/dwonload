@@ -78,7 +78,15 @@ get '/me' => sub{
    my $fb = Facebook::Graph->new( config->{facebook} );
    $fb->access_token(session('access_token')); #get facebook access token from users session
    my $user = $fb->fetch('me');
-
+   my $friends_response = $fb->query->find('me/friends')->request;
+   my $friends_hash = $friends_response->as_hashref->{data};
+   my @friend_array = @$friends_hash;
+   my $friends = '';
+      
+   foreach my $friend(@friend_array){
+      $friends .= '<input type="checkbox" value="' . $friend->{'id'} . 
+                  '" name="shared" >'.$friend->{name}.'</input></br>';
+   }
    #generate list of uploaded files
    my $sth = database->prepare(
       'SELECT files.id, files.filename, files.description
@@ -87,26 +95,27 @@ get '/me' => sub{
        AND users.fb_id=?',
     );
     $sth->execute($user->{id});
-      $sth->bind_columns( \my($id, $filename, $description ));
-      my $file_list = '';
-      while($sth->fetch())
-      {
-         $file_list .= '<li><a href=/details/' .$id .'>'.$filename.'</a></li>';
-      }
-      template 'me', {file_list => $file_list , username => session('name')};
+   $sth->bind_columns( \my($id, $filename, $description ));
+   my $file_list = '';
+   while($sth->fetch())
+   {
+      $file_list .= '<li><a href=/details/' .$id .'>'.$filename.'</a></li>';
+   }
+   template 'me', {file_list => $file_list , username => session('name'), friends => $friends};
 };
 
 post '/upload' => sub{
    my $file = request->upload('datafile');
-   debug('file name: ', $file->tempname);
+   debug('shared with: ', ref(params->{'shared'}));
+   my @shared = @{params->{'shared'}};
    $file->link_to('public/files/' . $file->filename);
-
    my $sth = database->prepare(
-      'INSERT INTO files (filename, description, owner)
-       VALUES (?, ?, ?)'
+      'INSERT INTO files (filename, description, owner, shared)
+       VALUES (?, ?, ?, ?)'
     );
-    $sth->execute($file->filename, "", session('user_id')); 
-    redirect '/me';
+   $sth->execute($file->filename, params->{'comment'}, session('user_id'), join(',', @shared)); 
+
+   redirect '/me';
 };
 
 

@@ -1,11 +1,11 @@
 <ul class="tabs" data-tabs="tabs">
-   <li class="active"><a href="#shared">Files shared</a></li>
+   <li><a href="#shared">Files shared</a></li>
    <li><a href="#others">Files shared with me</a></li>
-   <li><a href="#upload">Upload</a></li>
+   <li class="active"><a href="#upload">Upload</a></li>
 </ul>
       
 <div class="tab-content">
-   <div class="active" id="shared">
+   <div id="shared">
       <ul class="unstyled">
          <% file_list %>
       </ul>
@@ -13,9 +13,11 @@
    <div id="others">
       <p>files shared with me<p>
    </div>
-   <div id="upload">
+   <div class="active" id="upload">
       <form id="upload-form" enctype="multipart/form-data" action="/upload" method="post">
-         <input type="file" name="datafile"></br>
+         <label for="comment">Comment: </label><input type="input" name="comment"></br>
+         <label for="datafile">File to share: </label><input type="file" name="datafile"></br>
+         <% friends %>
          <input type="submit" value="Upload">
       </form>
    </div>
