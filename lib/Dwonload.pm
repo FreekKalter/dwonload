@@ -104,29 +104,36 @@ get '/me' => sub{
    }
 
    #generate list of files shared with me
-   $sth = datbase->prepare(
+   $sth = database->prepare(
       'SELECT * FROM files
        WHERE shared REGEXP ?');
    $sth->execute($user->{'id'});    #try a user i know a shared a file with
-   $sth->bind_colums(($id, $filename, $description));
+   $sth->bind_columns(\my($id, $filename, $description, $owner, $shared));
    my $shared_files = '';
    while($sth->fetch())
    {
       $shared_files .= '<li><a href=/details/' .$id .'>'.$filename.'</a></li>';
    }
-   template 'me', {file_list => $file_list , username => session('name'), friends => $friends , shared => $shared_files};
+   template 'me', {file_list => $file_list , username => session('name'), friends => $friends , shared_files => $shared_files};
 };
 
 post '/upload' => sub{
    my $file = request->upload('datafile');
    debug('shared with: ', ref(params->{'shared'}));
-   my @shared = @{params->{'shared'}};
+   my $shared ='';
+   unless(ref(params->{'shared'}))# not a ref
+   {
+      $shared = params->{'shared'};
+
+   }else{
+      $shared =  join(',', @{params->{'shared'}}); 
+   }
    $file->link_to('public/files/' . $file->filename);
    my $sth = database->prepare(
       'INSERT INTO files (filename, description, owner, shared)
        VALUES (?, ?, ?, ?)'
     );
-   $sth->execute($file->filename, params->{'comment'}, session('user_id'), join(',', @shared)); 
+   $sth->execute($file->filename, params->{'comment'}, session('user_id'), $shared); 
    redirect '/me';
 };
 

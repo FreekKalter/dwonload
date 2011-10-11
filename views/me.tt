@@ -16,11 +16,21 @@
       </ul>
    </div>
    <div class="active" id="upload">
-      <form id="upload-form" enctype="multipart/form-data" action="/upload" method="post">
-         <label for="comment">Comment: </label><input type="input" name="comment"></br>
-         <label for="datafile">File to share: </label><input type="file" name="datafile"></br>
-         <% friends %>
-         <input type="submit" value="Upload">
+      <form id="upload-form" enctype="multipart/form-data" action="/upload" method="post" >
+         <fieldset>
+            <legend>Upload a file to share with your friends.</legend>
+
+            <label for="comment">Comment</label>
+            <textarea class="xxlarge" rows="3" name="comment" style="width: 304px; height: 60px;"></textarea>
+            </br>
+
+            <label for="datafile">File to share: </label>
+            <input class="input-file" type="file" name="datafile"></br>
+            </br>
+
+            <% friends %>
+            <input class="btn primary" type="submit">Upload</button>
+         </fieldset>
       </form>
    </div>
 </div>
