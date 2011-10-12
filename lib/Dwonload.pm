@@ -25,13 +25,19 @@ our $VERSION = '0.1';
 #   }
 #};
  
+#any '/files/*' => sub{
+#   debug('* is: ', splat);
+#   status 'not found';
+#   template 'special_404', {path => request->path};
+#};
+
 get '/' => sub {
-    redirect '/files';
+    redirect '/me';
 };
 
 get '/logout' => sub{
    session->destroy;
-   redirect '/files';
+   redirect '/me';
 };
 
 
@@ -138,19 +144,19 @@ post '/upload' => sub{
 };
 
 
-get '/files' => sub{
-   my $sth = database->prepare(
-      'select * from files',
-   );
-   $sth->execute();
-   $sth->bind_columns( \my($id, $filename, $description, $owner));
-   my $file_list = '';
-   while($sth->fetch())
-   {
-      $file_list .= '<li><a href=/details/' .$id .'>'.$filename.'</a></li>';
-   }
-   template 'index', {file_list => $file_list , username => session('name')};
-};          
+#get '/files' => sub{
+#   my $sth = database->prepare(
+#      'select * from files',
+#   );
+#   $sth->execute();
+#   $sth->bind_columns( \my($id, $filename, $description, $owner));
+#   my $file_list = '';
+#   while($sth->fetch())
+#   {
+#      $file_list .= '<li><a href=/details/' .$id .'>'.$filename.'</a></li>';
+#   }
+#   template 'index', {file_list => $file_list , username => session('name')};
+#};          
 
 get '/details/:id' => sub{
    my $content = read_file_content("../dwonload.yml");
@@ -166,7 +172,7 @@ get '/details/:id' => sub{
    $sth->execute( $id);  
    my $row = $sth->fetchrow_hashref;
    #debug('Session: ', session('freek')); 
-   if(! session('freek'))
+   if(! session('name'))
    {
       #recaptcha
       my $c = Captcha::reCAPTCHA->new;
@@ -229,8 +235,14 @@ get '/download_file/:generated_id' => sub{
          );
          $sth->execute($return_value->{'id'});
          $return_value = $sth->fetchrow_hashref;
+         my $content = read_file_content("../dwonload.yml");
+         my $loader = YAML::Loader->new;
+         my $hash = $loader->load($content);
+         my $files_path = $hash->{'files_path'}; 
+         debug('path: ', $files_path->{'path'});
          if($return_value){
-           return send_file('files/' . $return_value->{'filename'}, 
+           return send_file($files_path->{'path'} . $return_value->{'filename'}, 
+                           system_path => 1,
                            content_type => 'application/octet-stream ',
                            filename =>  $return_value->{'filename'} );
             template 'download_started', {status => '<p >Download started!</p>'};
