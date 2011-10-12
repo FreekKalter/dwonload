@@ -5,17 +5,17 @@
 </ul>
       
 <div class="tab-content">
-   <div id="shared">
+   <div id="shared" class="content">
       <ul class="unstyled">
          <% file_list %>
       </ul>
    </div>
    <div id="others">
-       <ul class="unstyled">
+       <ul class="unstyled" class="content">
          <% shared_files %>
       </ul>
    </div>
-   <div class="active" id="upload">
+   <div class="active" id="upload" class="content">
       <form id="upload-form" enctype="multipart/form-data" action="/upload" method="post" >
          <fieldset>
             <legend>Upload a file to share with your friends.</legend>

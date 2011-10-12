@@ -3,23 +3,21 @@
  * ----------------------------------------------------- */
 
 
-/* Variables
--------------------------------------------------- */
-
 // Links
-@linkColor:         #8b59c2;
-@linkColorHover:    darken(@linkColor, 10);
+@linkColor:         #0069d6;
+@linkColorHover:    darken(@linkColor, 15);
 
 // Grays
-@white:             #fff;
-@grayLighter:       #ccc;
-@grayLight:         #777;
-@gray:              #555;
-@grayDark:          #333;
 @black:             #000;
+@grayDark:          lighten(@black, 25%);
+@gray:              lighten(@black, 50%);
+@grayLight:         lighten(@black, 75%);
+@grayLighter:       lighten(@black, 90%);
+@white:             #fff;
 
 // Accent Colors
-@blue:              #08b5fb;
+@blue:              #049CDB;
+@blueDark:          #0064CD;
 @green:             #46a546;
 @red:               #9d261d;
 @yellow:            #ffc40d;
@@ -28,14 +26,14 @@
 @purple:            #7a43b6;
 
 // Baseline grid
-@baseline:          20px;
+@basefont:          13px;
+@baseline:          18px;
 
 // Griditude
+// Modify the grid styles in mixins.less
 @gridColumns:       16;
 @gridColumnWidth:   40px;
 @gridGutterWidth:   20px;
-@siteWidth:         (@gridColumns * @gridColumnWidth) + (@gridGutterWidth * (@gridColumns - 1));
-
 @extraSpace:        (@gridGutterWidth * 2); // For our grid calculations
 @siteWidth:         (@gridColumns * @gridColumnWidth) + (@gridGutterWidth * (@gridColumns - 1));
 

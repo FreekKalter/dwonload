@@ -88,11 +88,17 @@ get '/me' => sub{
    my $friends_response = $fb->query->find('me/friends')->request;
    my $friends_hash = $friends_response->as_hashref->{data};
    my @friend_array = @$friends_hash;
-   my $friends = '';
+   my $friends = '<div class="row"><div class="span6 columns">';
+   my $half = scalar(@friend_array) / 2;
+   my $counter = 0;
    foreach my $friend(@friend_array){
-      $friends .= '<input type="checkbox" value="' . $friend->{'id'} . 
-                  '" name="shared" >'.$friend->{name}.'</input></br>';
+      $counter++;
+      $friends .= '<input type="checkbox" value="' . $friend->{'id'} . '" name="shared" >' . $friend->{name} . '</input></br>';
+      if($counter == $half){
+         $friends .= '</div><div class="span6 columns">';
+      }
    }
+   $friends .= '</div></div>';
 
    #generate list of uploaded files
    my $sth = database->prepare(
