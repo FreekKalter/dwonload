@@ -111,7 +111,7 @@
   }
 }
 
-// gradient is applied to it's own element because overflow visible is not honored by ie when filter is present
+// gradient is applied to its own element because overflow visible is not honored by ie when filter is present
 // For backwards compatibility, include .topbar .fill
 .topbar-inner,
 .topbar .fill {
@@ -214,7 +214,7 @@
 }
 
 // Dropdown Menus
-// Use the .menu class on any <li> element within the topbar or ul.tabs and you'll get some superfancy dropdowns
+// Use the .menu class on any <li> element within the topbar or ul.tabs and youll get some superfancy dropdowns
 // li.menu for backwards compatibility
 li.menu,
 .dropdown {
@@ -262,7 +262,7 @@ a.menu:after,
   .box-shadow(0 2px 4px rgba(0,0,0,.2));
   .background-clip(padding-box);
 
-  // Unfloat any li's to make them stack
+  // Unfloat any lis to make them stack
   li {
     float: none;
     display: block;
@@ -337,7 +337,6 @@ a.menu:after,
 .tabs {
   float: left;
   width: 100%;
-  border-bottom: 1px solid #ddd;
   > li {
     position: relative; // For the dropdowns mostly
     top: 1px;
@@ -345,19 +344,9 @@ a.menu:after,
       padding: 0 15px;
       margin-right: 2px;
       line-height: @baseline * 2;
-      border: 1px solid transparent;
-      .border-radius(4px 4px 0 0);
-      &:hover {
-        text-decoration: none;
-        background-color: #eee;
-        border-color: #eee #eee #ddd;
-      }
     }
     &.active > a {
-      color: @gray;
-      background-color: @white;
-      border: 1px solid #ddd;
-      border-bottom-color: transparent;
+       text-decoration: underline;
     }
   }
   // first one for backwards compatibility
@@ -396,18 +385,13 @@ a.menu:after,
     padding: 0 15px;
     text-shadow: 0 1px 1px @white;
     line-height: 30px;
-    .border-radius(15px);
     &:hover {
-      background: @linkColorHover;
       color: @white;
       text-decoration: none;
       text-shadow: 0 1px 1px rgba(0,0,0,.25);
     }
   }
   .active a {
-    background: @linkColor;
-    color: @white;
-    text-shadow: 0 1px 1px rgba(0,0,0,.25);
   }
 }
 

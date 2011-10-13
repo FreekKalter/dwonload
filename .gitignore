@@ -1,5 +1,6 @@
-sessions/*
-*.sw*
-public/files/*
 *.DS_Store
+*.sw*
+sessions/*
+public/files/*
 logs/*
+public/less/bootstrap/lib/*.tmp
