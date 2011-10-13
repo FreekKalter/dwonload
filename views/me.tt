@@ -4,33 +4,47 @@
    <li class="active"><a href="#upload">Upload</a></li>
 </ul>
       
-<div class="tab-content center-block">
-   <div id="shared" class="content">
-      <ul class="unstyled">
+<div class="tab-content">
+   <div id="shared" >
+      <ul class="unstyled file_list">
          <% file_list %>
       </ul>
    </div>
    <div id="others">
-       <ul class="unstyled" class="content">
+       <ul class="unstyled file_list">
          <% shared_files %>
       </ul>
    </div>
    <div class="active" id="upload" class="content">
-      <form id="upload-form" enctype="multipart/form-data" action="/upload" method="post" >
-         <fieldset>
-            <legend>Upload a file to share with your friends.</legend>
+      <div class="centerblock">
+         <form id="upload-form" enctype="multipart/form-data" action="/upload" method="post"  >
+            <fieldset>
+               <!--<legend><strong>Upload a file to share with your friends.</strong></legend>-->
+               <div class="clearfix">
+                  <label for="comment">Comment</label>
+                  <div class="input">
+                     <textarea class="xxlarge" rows="3" name="comment" style="width: 304px; height: 60px;"></textarea>
+                  </div>
+               </div>
 
-            <label for="comment">Comment</label>
-            <textarea class="xxlarge" rows="3" name="comment" style="width: 304px; height: 60px;"></textarea>
-            </br>
+               <div class="clearfix">
+                  <label for="datafile">File to share: </label>
+                  <div class="input">
+                     <input class="input-file" type="file" name="datafile">
+                  </div>
+               </div>
 
-            <label for="datafile">File to share: </label>
-            <input class="input-file" type="file" name="datafile"></br>
-            </br>
-
-            <% friends %>
-            <input type="submit" value="Upload" />
-         </fieldset>
-      </form>
+               <div class="clearfix">
+                  <label>Friends to share with</label>
+                  <div class="input">
+                     <ul class="inputs-list">
+                        <% friends %>
+                     </ul>
+                  </div>
+               </div>
+               <input type="submit" value="Upload" />
+            </fieldset>
+         </form>
+      </div><!--center-->
    </div>
 </div>

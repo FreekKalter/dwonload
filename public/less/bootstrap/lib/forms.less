@@ -19,7 +19,6 @@ fieldset {
     padding-left: 150px;
     font-size: @basefont * 1.5;
     line-height: 1;
-    color: @grayDark;
     *padding: 0 0 5px 145px; /* IE6-7 */
     *line-height: 1.5; /* IE6-7 */
   }
@@ -37,6 +36,8 @@ input,
 select,
 textarea {
   #font > .sans-serif(normal,13px,normal);
+  color: @grayDark;
+  display: block;
 }
 
 // Float labels left
@@ -47,10 +48,9 @@ label {
   float: left;
   width: 130px;
   text-align: right;
-  color: @grayDark;
 }
 
-// Shift over the inside div to align all label's relevant content
+// Shift over the inside div to align all labels relevant content
 form .input {
   margin-left: 150px;
 }
@@ -129,7 +129,7 @@ textarea {
   cursor: not-allowed;
 }
 
-// Placeholder text gets special styles; can't be bundled together though for some reason
+// Placeholder text gets special styles; cant be bundled together though for some reason
 :-moz-placeholder {
   color: @grayLight;
 }
@@ -155,7 +155,7 @@ input[type=file]:focus,
 input[type=checkbox]:focus,
 select:focus {
   .box-shadow(none); // override for file inputs
-  outline: 1px dotted #666; // Selet elements don't get box-shadow styles, so instead we do outline
+  outline: 1px dotted #666; // Selet elements dont get box-shadow styles, so instead we do outline
 }
 
 // Error styles

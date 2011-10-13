@@ -1,0 +1,23 @@
+<div id="about" class="details" >
+   <p>
+      Dwonloader is a website to easily share files with your friends.
+      Opposed to sites like Rapidshare or Megaupload, here you can keep your files private with your friends.
+   </p>
+   <p>
+      This is done through your facebook accounts, so you don't have to mess around with email adressess or names.
+   </p>
+   <ol>
+      <li>Login with your facebook acount.</li>
+      <li>Select friends.</li>
+      <li>Upload.</li>
+   </ol>
+   <p>
+      Its as simple as that. Once your friends log in they can retreive the file you shared with them.
+      So, login in and start sharing!
+   </p>
+   <p>
+      <div class="facebook-login">
+         <a href="/login"><img src="/images/facebook-login.png" /></a>
+      </div>
+   </p>
+</div>

@@ -32,8 +32,17 @@ our $VERSION = '0.1';
 #};
 
 get '/' => sub {
+   if(session('access_token')){
     redirect '/me';
+ }else{
+    redirect '/about';
+ }
 };
+
+get '/about' => sub{
+   template 'about';
+};
+
 
 get '/logout' => sub{
    session->destroy;
@@ -81,52 +90,58 @@ get '/facebook/postback/' => sub {
 
 get '/me' => sub{
    my $fb = Facebook::Graph->new( config->{facebook} );
-   $fb->access_token(session('access_token')); #get facebook access token from users session
-   my $user = $fb->fetch('me');
+   if(!session('access_token')){
+      redirect '/';
+   }else{
+      $fb->access_token(session('access_token')); #get facebook access token from users session
+      my $user = $fb->fetch('me');
 
-   #generate list of friends to share files with
-   my $friends_response = $fb->query->find('me/friends')->request;
-   my $friends_hash = $friends_response->as_hashref->{data};
-   my @friend_array = @$friends_hash;
-   my $friends = '<div class="row"><div class="span6 columns">';
-   my $half = scalar(@friend_array) / 2;
-   my $counter = 0;
-   foreach my $friend(@friend_array){
-      $counter++;
-      $friends .= '<input type="checkbox" value="' . $friend->{'id'} . '" name="shared" >' . $friend->{name} . '</input></br>';
-      if($counter == $half){
-         $friends .= '</div><div class="span6 columns">';
+      #generate list of friends to share files with
+      my $friends_response = $fb->query->find('me/friends')->request;
+      my $friends_hash = $friends_response->as_hashref->{data};
+      my @friend_array = @$friends_hash;
+      my $friends = '';
+      my $half = scalar(@friend_array) / 2;
+      my $counter = 0;
+      foreach my $friend(@friend_array){
+         $counter++;
+         $friends .= '<label><input type="checkbox" value="' . $friend->{'id'} . '" name="shared" ><span>' . $friend->{name} . '</span></input></label>';
+   #      if($counter == $half){
+   #         $friends .= '</div><div class="span6 columns">';
+   #      }
       }
-   }
-   $friends .= '</div></div>';
 
-   #generate list of uploaded files
-   my $sth = database->prepare(
-      'SELECT files.id, files.filename, files.description
-       FROM files, users
-       WHERE files.owner = users.id
-       AND users.fb_id=?',
-    );
-    $sth->execute($user->{id});
-   $sth->bind_columns( \my($id, $filename, $description ));
-   my $file_list = '';
-   while($sth->fetch())
-   {
-      $file_list .= '<li><a href=/details/' .$id .'>'.$filename.'</a></li>';
-   }
+      #generate list of uploaded files
+      my $sth = database->prepare(
+         'SELECT files.id, files.filename, files.description
+          FROM files, users
+          WHERE files.owner = users.id
+          AND users.fb_id=?',
+       );
+       $sth->execute($user->{id});
+      $sth->bind_columns( \my($id, $filename, $description ));
+      my $file_list = '';
+      while($sth->fetch())
+      {
+         $file_list .= '<li>
+                           <a href="/details/' .$id .'">'.$filename .'</a>
+                           <a href="/details/' .$id .'?details=1"> <em>details</em> </a>
+                        </li>';
+      }
 
-   #generate list of files shared with me
-   $sth = database->prepare(
-      'SELECT * FROM files
-       WHERE shared REGEXP ?');
-   $sth->execute($user->{'id'});    #try a user i know a shared a file with
-   $sth->bind_columns(\my($id, $filename, $description, $owner, $shared));
-   my $shared_files = '';
-   while($sth->fetch())
-   {
-      $shared_files .= '<li><a href=/details/' .$id .'>'.$filename.'</a></li>';
+      #generate list of files shared with me
+      $sth = database->prepare(
+         'SELECT * FROM files
+          WHERE shared REGEXP ?');
+      $sth->execute($user->{'id'});    #try a user i know a shared a file with
+      $sth->bind_columns(\my($id, $filename, $description, $owner, $shared));
+      my $shared_files = '';
+      while($sth->fetch())
+      {
+         $shared_files .= '<li><a href=/details/' .$id .'>'.$filename.'</a></li>';
+      }
+      template 'me', {file_list => $file_list , username => session('name'), friends => $friends , shared_files => $shared_files};
    }
-   template 'me', {file_list => $file_list , username => session('name'), friends => $friends , shared_files => $shared_files};
 };
 
 post '/upload' => sub{
@@ -169,7 +184,6 @@ get '/details/:id' => sub{
    my $loader = YAML::Loader->new;
    my $hash = $loader->load($content);
    my $recaptcha_config = $hash->{'recaptcha'}; 
-   debug('public key: ',$recaptcha_config->{'public-key'}); 
 
    my $id = params->{id};   
    my $sth = database->prepare(
@@ -187,10 +201,14 @@ get '/details/:id' => sub{
                            recaptcha => $c->get_html($recaptcha_config->{'public-key'} )#public recapthca key
                            }; 
    }else{
-      template 'details', {id => $id,
-                           description => $row->{'description'},
-                           download_link => "<a href=" . &generate_temp($id) . ">Download</a>"
-                        };
+      if(params->{'details'}){
+         template 'details', {id => $id,
+                              description => $row->{'description'},
+                              download_link => "<a href=" . &generate_temp($id) . ">Download</a>"
+                           };
+      }else{
+         redirect &generate_temp($id);
+      }
    }
 };
 
@@ -353,15 +371,6 @@ sub generate_temp
    my $dt = DateTime->now(time_zone => 'local');
    $dt->add(hours => 1);
    $sth->execute($id, $random_download_id,  DateTime::Format::MySQL->format_datetime($dt));
-   $random_download_id = '/download_file/' . $random_download_id;
-
-   #redirect to this page  /download_file/generated_string
-   $sth = database->prepare(
-      'SELECT description FROM files WHERE id = ?',
-   );
-   $sth->execute( $id);  
-   my $row = $sth->fetchrow_hashref;
-   return $random_download_id;
-   #template 'download', {description => $row->{'description'}, download_link => $random_download_id }; 
+   return '/download_file/' . $random_download_id;
 };
 true;
