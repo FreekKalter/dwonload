@@ -6,9 +6,9 @@
       
 <div class="tab-content">
    <div id="shared" >
-      <ul class="unstyled file_list">
+	<table>
          <% file_list %>
-      </ul>
+	</table>
    </div>
    <div id="others">
        <ul class="unstyled file_list">
