@@ -123,10 +123,10 @@ get '/me' => sub{
       my $file_list = '';
       while($sth->fetch())
       {
-         $file_list .= '<li>
+         $file_list .= '<td>
                            <a href="/details/' .$id .'">'.$filename .'</a>
                            <a href="/details/' .$id .'?details=1"> <em>details</em> </a>
-                        </li>';
+                        </td>';
       }
 
       #generate list of files shared with me
