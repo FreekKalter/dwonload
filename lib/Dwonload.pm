@@ -113,20 +113,21 @@ get '/me' => sub{
 
       #generate list of uploaded files
       my $sth = database->prepare(
-         'SELECT files.id, files.filename, files.description
+         'SELECT files.id, files.filename, files.description, files.owner, files.size
           FROM files, users
           WHERE files.owner = users.id
           AND users.fb_id=?',
        );
        $sth->execute($user->{id});
-      $sth->bind_columns( \my($id, $filename, $description ));
+      $sth->bind_columns( \my($id, $filename, $description , $owner, $size));
       my $file_list = '';
       while($sth->fetch())
       {
-         $file_list .= '<td>
-                           <a href="/details/' .$id .'">'.$filename .'</a>
-                           <a href="/details/' .$id .'?details=1"> <em>details</em> </a>
-                        </td>';
+         $file_list .= '<tr>
+                           <td><a href="/details/' .$id .'">'.$filename .'</a><a href="/details/' .$id .'?details=1"> <em>details</em> </a></td>
+                           <td>'. &get_size($size) . '</td>
+                           <td><em>' . $owner . '</em></td>
+                        </tr>';
       }
 
       #generate list of files shared with me
@@ -134,11 +135,14 @@ get '/me' => sub{
          'SELECT * FROM files
           WHERE shared REGEXP ?');
       $sth->execute($user->{'id'});    #try a user i know a shared a file with
-      $sth->bind_columns(\my($id, $filename, $description, $owner, $shared));
+      $sth->bind_columns(\my($id, $filename, $description, $owner, $shared, $size));
       my $shared_files = '';
       while($sth->fetch())
       {
-         $shared_files .= '<li><a href=/details/' .$id .'>'.$filename.'</a></li>';
+         $shared_files .= '<tr>
+                              <td><a href="/details/' .$id .'">'.$filename .'</a><a href="/details/' .$id .'?details=1"> <em>details</em> </a></td>
+                              <td><em>' . &get_size($size) .'</em></td>
+                           </tr>';
       }
       template 'me', {file_list => $file_list , username => session('name'), friends => $friends , shared_files => $shared_files};
    }
@@ -157,10 +161,10 @@ post '/upload' => sub{
    }
    $file->link_to('public/files/' . $file->filename);
    my $sth = database->prepare(
-      'INSERT INTO files (filename, description, owner, shared)
-       VALUES (?, ?, ?, ?)'
+      'INSERT INTO files (filename, description, owner, shared, size)
+       VALUES (?, ?, ?, ?, ?)'
     );
-   $sth->execute($file->filename, params->{'comment'}, session('user_id'), $shared); 
+   $sth->execute($file->filename, params->{'comment'}, session('user_id'), $shared, $file->size); 
    redirect '/me';
 };
 
@@ -350,6 +354,28 @@ get '/activate_account/:user_id' => sub{
 any qr{.*} => sub {
    status 'not found';
    template 'special_404', {path => request->path};
+};
+
+sub get_size
+{
+   my $size = shift;
+   if($size > 1000)
+   {
+      $size = $size /1000;
+      if($size > 1000)
+      {
+         $size = $size /1000;
+         debug('size: ', $size);
+         if($size > 1000)
+         {
+            $size = $size /1000;
+            return sprintf("%.2f",$size). "GB";
+         }
+         return sprintf("%.2f",$size). "MB";
+      }
+      return sprintf("%.2f",$size). "KB";
+   }
+   return sprintf("%.2f",$size). "B";
 };
 
 sub generate_temp

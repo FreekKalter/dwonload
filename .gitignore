@@ -5,3 +5,6 @@ sessions/*
 public/files/*
 logs/*
 public/less/bootstrap/lib/*.tmp
+public/less/bootstrap/bootstrap.css
+public/less/bootstrap/bootstrap.min.css
+

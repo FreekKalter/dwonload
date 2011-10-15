@@ -17,7 +17,7 @@ table {
   border: 1px solid #ddd;
   .border-radius(4px);
   th, td {
-    padding: 10px 10px 9px;
+    padding: 8px 8px 7px;
     line-height: @baseline;
     text-align: left;
   }
@@ -59,8 +59,9 @@ table {
 .zebra-striped {
   tbody {
     tr:nth-child(odd) td {
-      background-color: #f9f9f9;
+       #translucent > .background(@blue, 0.5);
     }
+    
     tr:hover td {
       background-color: #f5f5f5;
     }
@@ -107,7 +108,7 @@ table {
       border-right: 4px solid transparent;
       border-top: 4px solid #000;
       visibility:visible;
-      .box-shadow(none); //can't add boxshadow to downward facing arrow :(
+      .box-shadow(none); //cant add boxshadow to downward facing arrow :(
       .opacity(60);
     }
   }

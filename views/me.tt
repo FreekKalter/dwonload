@@ -1,21 +1,38 @@
 <ul class="tabs" data-tabs="tabs">
-   <li><a href="#shared">Files shared</a></li>
+   <li class="active"><a href="#shared">Files shared</a></li>
    <li><a href="#others">Files shared with me</a></li>
-   <li class="active"><a href="#upload">Upload</a></li>
+   <li><a href="#upload">Upload</a></li>
 </ul>
       
 <div class="tab-content">
-   <div id="shared" >
-	<table>
+   <div id="shared" class="active">
+	<table class="zebra-striped">
+      <thead>
+         <tr>
+            <th>Filename</th>
+            <th>Size</th>
+            <th>Owner</th>
+         </tr>
+      </thead>
+      <tbody>
          <% file_list %>
+      </tbody>
 	</table>
    </div>
    <div id="others">
-       <ul class="unstyled file_list">
-         <% shared_files %>
-      </ul>
+      <table class="zebra-striped">
+         <thead>
+            <tr>
+               <th>Filename</th>
+               <th>Size</th>
+            </tr>
+         </thead>
+         <tbody>
+            <% shared_files %>
+         </tbody>
+      </table>
    </div>
-   <div class="active" id="upload" class="content">
+   <div id="upload">
       <div class="centerblock">
          <form id="upload-form" enctype="multipart/form-data" action="/upload" method="post"  >
             <fieldset>
