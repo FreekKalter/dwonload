@@ -128,12 +128,28 @@ get '/me' => sub{
                            <td>'. &get_size($size) . '</td>
                         </tr>';
       }
+      #get file_ids that are new since last login
+      $sth = database->prepare(
+         'SELECT new
+          FROM users
+          WHERE id=?'
+       );
+      $sth->execute(&get_database_user_id($user->{'id'})) or die $sth->errstr;
+      my $new_files_hash = $sth->fetchrow_hashref;
+      my $new_files = $new_files_hash->{'new'};
+      #empty the new field, cause the user has seen them now
+      $sth = database->prepare(
+         'UPDATE users
+          SET new=""
+          WHERE id=?' 
+       );
+      $sth->execute(&get_database_user_id($user->{'id'})) or die $sth->errstr;
 
       #generate list of files shared with me
       $sth = database->prepare(
          'SELECT files.*, users.fb_id FROM files, users
           WHERE shared REGEXP ? AND files.owner = users.id');
-      $sth->execute($user->{'id'});    #try a user i know a shared a file with
+      $sth->execute($user->{'id'});    
       $sth->bind_columns(\my($id, $filename, $description, $owner, $shared, $size, $fb_id));
      
       my $shared_files = '';
@@ -141,7 +157,11 @@ get '/me' => sub{
       {
          my $friend = $fb->fetch($fb_id);
          $shared_files .= '<tr>
-                              <td><a href="/details/' .$id .'">'.$filename .'</a><a href="/details/' .$id .'?details=1"> <em>details</em> </a></td>
+                              <td><a href="/details/' .$id .'">'.$filename .'</a><a href="/details/' .$id .'?details=1"> <em>details</em> </a>';
+         if(grep $_ eq $id, split(',', $new_files)){
+            $shared_files .=  '<span class="label success">New</span>';
+         };
+         $shared_files .=    '</td>
                               <td><em>' . &get_size($size) .'</em></td>
                               <td><em>' . $friend->{'name'}. '</em></td>
                            </tr>';
@@ -161,13 +181,28 @@ post '/upload' => sub{
    }else{
       $shared =  join(',', @{params->{'shared'}}); 
    }
+   #update this to new folder above server-root
    $file->link_to('public/files/' . $file->filename);
+
+   #insert file info into database
    my $sth = database->prepare(
       'INSERT INTO files (filename, description, owner, shared, size)
        VALUES (?, ?, ?, ?, ?)'
     );
    $sth->execute($file->filename, params->{'comment'}, session('user_id'), $shared, $file->size); 
+   my $dbh = database;
+   my $file_id = $dbh->last_insert_id(undef, undef, undef, undef); 
 
+   #insert value about new files
+   my ($user_hash, $id);
+   foreach my $user(split(',',$shared)){
+      $sth = database->prepare(
+         'UPDATE users
+          SET new = CONCAT(new, ?)
+          WHERE id=?'          
+       );
+       $sth->execute($file_id . ',', &get_database_user_id($user));
+    }
    redirect '/me';
 };
 
@@ -357,6 +392,20 @@ get '/activate_account/:user_id' => sub{
 any qr{.*} => sub {
    status 'not found';
    template 'special_404', {path => request->path};
+};
+
+sub get_database_user_id
+{
+   my $fb_id = shift;
+   #get users database id
+    my $sth = database->prepare(
+      'SELECT id
+       FROM users
+       WHERE fb_id=?'
+    );
+    $sth->execute($fb_id);
+    my $user_hash = $sth->fetchrow_hashref;
+    return $user_hash->{'id'}; 
 };
 
 sub get_size
