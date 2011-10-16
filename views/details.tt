@@ -1,5 +1,4 @@
 <div class="details">
-   <p><% description %></p>
    <% IF recaptcha %>
       <script type="text/javascript">
        var RecaptchaOptions = {
@@ -13,6 +12,11 @@
          <input type="submit" value="Download" />
       </form>
    <% ELSE %>
-      <% download_link %>
+   <p><% description %></p>
+   <% download_link %>
+   <ul>
+      <li><a href="/details/<% id %>?action=delete">Delete</a></li>
+      <li><a href="/details/<% id %>?action=friends">Update friends</a></li>
+   </ul>
    <% END %>
 </div>

@@ -17,6 +17,12 @@ use Dancer::FileUtils 'read_file_content';
 
 our $VERSION = '0.1';
 
+my $content = read_file_content("../dwonload.yml");
+my $loader = YAML::Loader->new;
+my $hash = $loader->load($content);
+my $recaptcha_config = $hash->{'recaptcha'}; 
+my $files_path = $hash->{'files_path'};
+
 #before sub{
 #   if (! session('user') && request->path_info !~ m{^/login}) #check if user is logged or on the login page
 #   {
@@ -181,8 +187,7 @@ post '/upload' => sub{
    }else{
       $shared =  join(',', @{params->{'shared'}}); 
    }
-   #update this to new folder above server-root
-   $file->link_to('public/files/' . $file->filename);
+   $file->link_to($files_path->{'path'} . $file->filename);
 
    #insert file info into database
    my $sth = database->prepare(
@@ -206,34 +211,13 @@ post '/upload' => sub{
    redirect '/me';
 };
 
-
-#get '/files' => sub{
-#   my $sth = database->prepare(
-#      'select * from files',
-#   );
-#   $sth->execute();
-#   $sth->bind_columns( \my($id, $filename, $description, $owner));
-#   my $file_list = '';
-#   while($sth->fetch())
-#   {
-#      $file_list .= '<li><a href=/details/' .$id .'>'.$filename.'</a></li>';
-#   }
-#   template 'index', {file_list => $file_list , username => session('name')};
-#};          
-
 get '/details/:id' => sub{
-   my $content = read_file_content("../dwonload.yml");
-   my $loader = YAML::Loader->new;
-   my $hash = $loader->load($content);
-   my $recaptcha_config = $hash->{'recaptcha'}; 
-
    my $id = params->{id};   
    my $sth = database->prepare(
       'SELECT description FROM files WHERE id = ?',
    );
    $sth->execute( $id);  
    my $row = $sth->fetchrow_hashref;
-   #debug('Session: ', session('freek')); 
    if(! session('name'))
    {
       #recaptcha
@@ -249,24 +233,46 @@ get '/details/:id' => sub{
                               download_link => "<a href=" . &generate_temp($id) . ">Download</a>"
                            };
       }else{
-         redirect &generate_temp($id);
+         if(!params->{'action'})
+         {
+            redirect &generate_temp($id);
+         }else{
+            
+            #check if users is owner of the file
+            $sth = database->prepare(
+               'SELECT owner
+                FROM files
+                WHERE id=?'
+             );
+            $sth->execute($id);
+            $row = $sth->fetchrow_hashref;
+            if($row->{'owner'} eq session('user_id'))
+            {
+               if(params->{'action'} eq 'delete')
+               {
+                  if(database->quick_delete('files', { id => $id}))
+                  {
+                     template 'details', {description => 'File deleted'};
+                  }else{
+                     template 'details', {description => 'Something went wrong'};
+                  }
+                  #delete acutal file 
+               }
+            }else{
+               template 'details', {description => 'You are not the owner of the file'};
+            }
+         }
       }
    }
 };
 
 post '/details' => sub{
-   my $content = read_file_content("../dwonload.yml");
-   my $loader = YAML::Loader->new;
-   my $hash = $loader->load($content);
-   my $recaptcha_config = $hash->{'recaptcha'}; 
-
     my $challenge = params->{'recaptcha_challenge_field'};
    my $response = params->{'recaptcha_response_field'};
    my $id = params->{'id'};   
 
    # Verify submission
    my $c = Captcha::reCAPTCHA->new;
-   debug('remote ip: ', request->remote_address);
     my $result = $c->check_answer( 
        $recaptcha_config->{'private-key'},#private key
        request->remote_address,
@@ -301,10 +307,6 @@ get '/download_file/:generated_id' => sub{
          );
          $sth->execute($return_value->{'id'});
          $return_value = $sth->fetchrow_hashref;
-         my $content = read_file_content("../dwonload.yml");
-         my $loader = YAML::Loader->new;
-         my $hash = $loader->load($content);
-         my $files_path = $hash->{'files_path'}; 
          debug('path: ', $files_path->{'path'});
          if($return_value){
            return send_file($files_path->{'path'} . $return_value->{'filename'}, 
