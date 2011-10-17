@@ -130,7 +130,7 @@ get '/me' => sub{
       while($sth->fetch())
       {
          $file_list .= '<tr>
-                           <td><a href="/details/' .$id .'">'.$filename .'</a><a href="/details/' .$id .'?details=1"> <em>details</em> </a></td>
+                           <td><a href="/details/' .$id .'?details=1">'.$filename .'</a><a href="/details/' .$id .'"> <em>download</em> </a></td>
                            <td>'. &get_size($size) . '</td>
                         </tr>';
       }
@@ -156,14 +156,14 @@ get '/me' => sub{
          'SELECT files.*, users.fb_id FROM files, users
           WHERE shared REGEXP ? AND files.owner = users.id');
       $sth->execute($user->{'id'});    
-      $sth->bind_columns(\my($id, $filename, $description, $owner, $shared, $size, $fb_id));
+      $sth->bind_columns(\($id, $filename, $description, $owner, my $shared, $size, my $fb_id));
      
       my $shared_files = '';
       while($sth->fetch())
       {
          my $friend = $fb->fetch($fb_id);
          $shared_files .= '<tr>
-                              <td><a href="/details/' .$id .'">'.$filename .'</a><a href="/details/' .$id .'?details=1"> <em>details</em> </a>';
+                              <td><a href="/details/' .$id .'?details=1">'.$filename .'</a><a href="/details/' .$id .'"> <em>download</em> </a></td>';
          if(grep $_ eq $id, split(',', $new_files)){
             $shared_files .=  '<span class="label success">New</span>';
          };
@@ -214,7 +214,7 @@ post '/upload' => sub{
 get '/details/:id' => sub{
    my $id = params->{id};   
    my $sth = database->prepare(
-      'SELECT description FROM files WHERE id = ?',
+      'SELECT * FROM files WHERE id = ?',
    );
    $sth->execute( $id);  
    my $row = $sth->fetchrow_hashref;
@@ -230,7 +230,9 @@ get '/details/:id' => sub{
       if(params->{'details'}){
          template 'details', {id => $id,
                               description => $row->{'description'},
-                              download_link => "<a href=" . &generate_temp($id) . ">Download</a>"
+                              size => $row->{'size'},
+                              download_link => "<a href=" . &generate_temp($id) . ">Download</a>",
+                              friends => $row->{'shared'}
                            };
       }else{
          if(!params->{'action'})

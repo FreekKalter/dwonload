@@ -12,11 +12,14 @@
          <input type="submit" value="Download" />
       </form>
    <% ELSE %>
-   <p><% description %></p>
-   <% download_link %>
-   <ul>
-      <li><a href="/details/<% id %>?action=delete">Delete</a></li>
-      <li><a href="/details/<% id %>?action=friends">Update friends</a></li>
-   </ul>
+      <p>File size: <% size %></p>
+      <p>Description: <% description %></p>
+      <p>Shared with: <% friends %> </p>
+      <ul>
+         <li> <% download_link %> </li>
+         <li><a href="/details/<% id %>?action=delete">Delete</a></li>
+         <li><a href="/details/<% id %>?action=friends">Update friends</a></li>
+      </ul>
+      <a href="/me">Back</a>
    <% END %>
 </div>
