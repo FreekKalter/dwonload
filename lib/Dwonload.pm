@@ -134,6 +134,7 @@ get '/me' => sub{
                            <td>'. &get_size($size) . '</td>
                         </tr>';
       }
+
       #get file_ids that are new since last login
       $sth = database->prepare(
          'SELECT new
@@ -266,6 +267,57 @@ get '/details/:id' => sub{
          }
       }
    }
+};
+
+get '/details/:id/edit' =>sub{
+   my $id = params->{'id'};
+   my $fb = Facebook::Graph->new( config->{facebook} );
+   if(!session('access_token')){
+      redirect '/';
+   }else{
+
+      #check if users is owner of the file
+      my $sth = database->prepare(
+         'SELECT owner
+          FROM files
+          WHERE id=?'
+       );
+      $sth->execute($id);
+      my $row = $sth->fetchrow_hashref;
+      if($row->{'owner'} ne session('user_id'))
+      {
+         template 'details', {description => 'You are not the owner of the file'};
+         return;
+      }
+
+      #get already checked friends
+      $sth = database->prepare(
+         'SELECT shared, description
+          FROM files
+          WHERE id=?'
+      );
+      $sth->execute($id);
+      $row = $sth->fetchrow_hashref;
+      my @already_shared = split(',', $row->{'shared'});
+
+      $fb->access_token(session('access_token')); #get facebook access token from users session
+      my $user = $fb->fetch('me');
+
+      #generate list of friends to share files with
+      my $friends_response = $fb->query->find('me/friends')->request;
+      my $friends_hash = $friends_response->as_hashref->{data};
+      my @friend_array = @$friends_hash;
+      my $friends = '';
+      foreach my $friend(@friend_array){
+         if(grep $_ eq $friend->{'id'}, @already_shared){
+            $friends .= '<label><input type="checkbox" value="' . $friend->{'id'} . '" name="shared" checked="yes"><span>' . $friend->{name} . '</span></input></label>';
+         }else{
+            $friends .= '<label><input type="checkbox" value="' . $friend->{'id'} . '" name="shared" ><span>' . $friend->{name} . '</span></input></label>';
+         }
+      }
+      template 'details_form', {comment => $row->{'description'}, friends => $friends};
+
+   }#session check
 };
 
 post '/details' => sub{
