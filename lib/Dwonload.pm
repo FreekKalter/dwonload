@@ -315,9 +315,33 @@ get '/details/:id/edit' =>sub{
             $friends .= '<label><input type="checkbox" value="' . $friend->{'id'} . '" name="shared" ><span>' . $friend->{name} . '</span></input></label>';
          }
       }
-      template 'details_form', {comment => $row->{'description'}, friends => $friends};
+      template 'details_form', {action => '/details/' .$id . '/edit', comment => $row->{'description'}, friends => $friends};
 
    }#session check
+};
+
+
+post '/details/:id/edit' =>sub{
+   #check if user is owner of file (again) TRUST NOBODY!
+   debug('in edit post');
+   my $comment = params->{'comment'};
+   chomp($comment);
+   my $id = params->{'id'};
+
+   my $shared ='';
+   unless(ref(params->{'shared'}))# not a ref
+   {
+      $shared = params->{'shared'};
+   }else{
+      $shared =  join(',', @{params->{'shared'}}); 
+   }
+   my $sth = database->prepare(
+      'UPDATE files
+       SET description=?, shared=?
+       WHERE id=?' 
+   );
+   $sth->execute($comment, $shared, $id);
+   redirect('/details/' . $id . '?details=1');
 };
 
 post '/details' => sub{

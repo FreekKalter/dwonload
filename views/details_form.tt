@@ -1,7 +1,7 @@
 <div class="details">
    <div id="upload">
       <div class="centerblock">
-         <form id="upload-form" enctype="multipart/form-data" action="/upload" method="post"  >
+         <form id="upload-form" action= <% action %> method="post"  >
             <fieldset>
                <!--<legend><strong>Upload a file to share with your friends.</strong></legend>-->
                <div class="clearfix">
