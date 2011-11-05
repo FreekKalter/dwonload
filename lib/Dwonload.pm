@@ -23,20 +23,6 @@ my $hash = $loader->load($content);
 my $recaptcha_config = $hash->{'recaptcha'}; 
 my $files_path = $hash->{'files_path'};
 
-#before sub{
-#   if (! session('user') && request->path_info !~ m{^/login}) #check if user is logged or on the login page
-#   {
-#      var requested_path => request->path_info;
-#      request->path_info('/login');
-#   }
-#};
- 
-#any '/files/*' => sub{
-#   debug('* is: ', splat);
-#   status 'not found';
-#   template 'special_404', {path => request->path};
-#};
-
 get '/' => sub {
    if(session('access_token')){
     redirect '/me';
