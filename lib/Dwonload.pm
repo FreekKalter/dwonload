@@ -284,6 +284,14 @@ get '/details/:id/edit' =>sub{
       );
       $sth->execute($id);
       $row = $sth->fetchrow_hashref;
+      if($row == undef)
+      {
+         if($sth->err){
+            debug('database error', $sth->errstr);
+         }else{
+            template 'details', {description => 'no such file'};
+         }
+      }
       my @already_shared = split(',', $row->{'shared'});
 
       $fb->access_token(session('access_token')); #get facebook access token from users session
