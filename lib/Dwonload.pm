@@ -246,44 +246,48 @@ get '/details/:id' => sub{
                            description => $row->{'description'} ,
                            recaptcha => $c->get_html($recaptcha_config->{'public-key'} )#public recapthca key
                            }; 
-   }else{
+   }else{#a session has ben made
       if(params->{'details'}){
+         my $owner = undef;
+         if($row->{'owner'} eq session('user_id')){
+            $owner = "Yes";
+         }
          template 'details', {id => $id,
                               description => $row->{'description'},
                               size => $row->{'size'},
                               download_link => "<a href=" . &generate_temp($id) . ">Download</a>",
-                              friends => $row->{'shared'}
-                           };
+                              friends => $row->{'shared'},
+                              owner => $owner };
       }else{
-         if(!params->{'action'})
+      if(!params->{'action'})
+      {
+         redirect &generate_temp($id);
+      }else{
+         
+         #check if users is owner of the file
+         $sth = database->prepare(
+            'SELECT owner
+             FROM files
+             WHERE id=?'
+          );
+         $sth->execute($id);
+         $row = $sth->fetchrow_hashref;
+         if($row->{'owner'} eq session('user_id'))
          {
-            redirect &generate_temp($id);
-         }else{
-            
-            #check if users is owner of the file
-            $sth = database->prepare(
-               'SELECT owner
-                FROM files
-                WHERE id=?'
-             );
-            $sth->execute($id);
-            $row = $sth->fetchrow_hashref;
-            if($row->{'owner'} eq session('user_id'))
+            if(params->{'action'} eq 'delete')
             {
-               if(params->{'action'} eq 'delete')
+               if(database->quick_delete('files', { id => $id}))
                {
-                  if(database->quick_delete('files', { id => $id}))
-                  {
-                     template 'details', {description => 'File deleted'};
-                  }else{
-                     template 'details', {description => 'Something went wrong'};
-                  }
-                  #delete acutal file 
+                  template 'details', {error => 'y', description => 'File deleted'};
+               }else{
+                  template 'details', {error => 'y', description => 'Something went wrong'};
                }
-            }else{
-               template 'details', {description => 'You are not the owner of the file'};
+               #delete acutal file 
             }
+         }else{
+            template 'details', {error => 'y', description => 'You are not the owner of the file'};
          }
+      }
       }
    }
 };
@@ -305,45 +309,44 @@ get '/details/:id/edit' =>sub{
       my $row = $sth->fetchrow_hashref;
       if($row->{'owner'} ne session('user_id'))
       {
-         template 'details', {description => 'You are not the owner of the file'};
-         return;
-      }
+         template 'details', {error => 'y', description => 'You are not the owner of the file'};
+      }else{
 
-      #get already checked friends
-      $sth = database->prepare(
-         'SELECT shared, description
-          FROM files
-          WHERE id=?'
-      );
-      $sth->execute($id);
-      $row = $sth->fetchrow_hashref;
-      if($row == undef)
-      {
-         if($sth->err){
-            debug('database error', $sth->errstr);
-         }else{
-            template 'details', {description => 'no such file'};
+         #get already checked friends
+         $sth = database->prepare(
+            'SELECT shared, description
+             FROM files
+             WHERE id=?'
+         );
+         $sth->execute($id);
+         $row = $sth->fetchrow_hashref;
+         if(!defined($row))
+         {
+            if($sth->err){
+               debug('database error', $sth->errstr);
+            }else{
+               template 'details', {error => 'y', description => 'no such file'};
+            }
          }
-      }
-      my @already_shared = split(',', $row->{'shared'});
+         my @already_shared = split(',', $row->{'shared'});
 
-      $fb->access_token(session('access_token')); #get facebook access token from users session
-      my $user = $fb->fetch('me');
+         $fb->access_token(session('access_token')); #get facebook access token from users session
+         my $user = $fb->fetch('me');
 
-      #generate list of friends to share files with
-      my $friends_response = $fb->query->find('me/friends')->request;
-      my $friends_hash = $friends_response->as_hashref->{data};
-      my @friend_array = @$friends_hash;
-      my $friends = '';
-      foreach my $friend(@friend_array){
-         if(grep $_ eq $friend->{'id'}, @already_shared){
-            $friends .= '<label><input type="checkbox" value="' . $friend->{'id'} . '" name="shared" checked="yes"><span>' . $friend->{name} . '</span></input></label>';
-         }else{
-            $friends .= '<label><input type="checkbox" value="' . $friend->{'id'} . '" name="shared" ><span>' . $friend->{name} . '</span></input></label>';
+         #generate list of friends to share files with
+         my $friends_response = $fb->query->find('me/friends')->request;
+         my $friends_hash = $friends_response->as_hashref->{data};
+         my @friend_array = @$friends_hash;
+         my $friends = '';
+         foreach my $friend(@friend_array){
+            if(grep $_ eq $friend->{'id'}, @already_shared){
+               $friends .= '<label><input type="checkbox" value="' . $friend->{'id'} . '" name="shared" checked="yes"><span>' . $friend->{name} . '</span></input></label>';
+            }else{
+               $friends .= '<label><input type="checkbox" value="' . $friend->{'id'} . '" name="shared" ><span>' . $friend->{name} . '</span></input></label>';
+            }
          }
-      }
-      template 'details_form', {action => '/details/' .$id . '/edit', comment => $row->{'description'}, friends => $friends};
-
+         template 'details_form', {action => '/details/' .$id . '/edit', comment => $row->{'description'}, friends => $friends};
+      }#owner check
    }#session check
 };
 
@@ -431,21 +434,6 @@ get '/download_file/:generated_id' => sub{
 any qr{.*} => sub {
    status 'not found';
    template 'special_404', {path => request->path};
-};
-
-sub notify_friends
-{
-   my ($fb , $friends_arrayref ,$message, $uri, $filename)  = @_;
-   
-   foreach my $friend(@$friends_arrayref){
-      my $response = $fb->add_post
-          ->set_message($message)
-          ->set_link_uri($uri)
-          ->set_link_name($filename)
-          ->set_link_caption('Download')
-          ->set_link_description('Download link')
-          ->publish;
-   }
 };
 
 sub get_database_user_id
