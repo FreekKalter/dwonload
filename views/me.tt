@@ -52,6 +52,13 @@
                </div>
 
                <div class="clearfix">
+                  <label>Link bij vrienden op wall posten: </label>
+                  <div class="input">
+                     <input type="checkbox" value="yes" name="wallpost" ></input>
+                  </div>
+               </div>
+
+               <div class="clearfix">
                   <label>Friends to share with</label>
                   <div class="input">
                      <ul class="inputs-list">

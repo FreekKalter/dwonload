@@ -31,6 +31,10 @@ get '/' => sub {
  }
 };
 
+get '/login' => sub{
+   redirect '/facebook/login';
+};
+
 get '/about' => sub{
    template 'about';
 };
@@ -146,8 +150,7 @@ get '/me' => sub{
       $sth->bind_columns(\($id, $filename, $description, $owner, my $shared, $size, my $fb_id));
      
       my $shared_files = '';
-      while($sth->fetch())
-      {
+      while($sth->fetch()) {
          my $friend = $fb->fetch($fb_id);
          $shared_files .= '<tr>
                               <td><a href="/details/' .$id .'?details=1">'.$filename .'</a><a href="/details/' .$id .'"> <em>download</em> </a></td>';
@@ -164,38 +167,68 @@ get '/me' => sub{
 };
 
 post '/upload' => sub{
-   my $file = request->upload('datafile');
-   debug('shared with: ', ref(params->{'shared'}));
-   my $shared ='';
-   unless(ref(params->{'shared'}))# not a ref
-   {
-      $shared = params->{'shared'};
-
+   my $fb = Facebook::Graph->new( config->{facebook} );
+   if(!session('access_token')){
+      redirect '/';
    }else{
-      $shared =  join(',', @{params->{'shared'}}); 
-   }
-   $file->link_to($files_path->{'path'} . $file->filename);
+      $fb->access_token(session('access_token')); #get facebook access token from users session
+      my $user = $fb->fetch('me');
+      my $file = request->upload('datafile');
+      my $shared ='';
+      unless(ref(params->{'shared'}))# not a ref
+      {
+         $shared = params->{'shared'};
 
-   #insert file info into database
-   my $sth = database->prepare(
-      'INSERT INTO files (filename, description, owner, shared, size)
-       VALUES (?, ?, ?, ?, ?)'
-    );
-   $sth->execute($file->filename, params->{'comment'}, session('user_id'), $shared, $file->size); 
-   my $dbh = database;
-   my $file_id = $dbh->last_insert_id(undef, undef, undef, undef); 
+      }else{
+         $shared =  join(',', @{params->{'shared'}}); 
+      }
+      $file->link_to($files_path->{'path'} . $file->filename);
 
-   #insert value about new files
-   my ($user_hash, $id);
-   foreach my $user(split(',',$shared)){
-      $sth = database->prepare(
-         'UPDATE users
-          SET new = CONCAT(new, ?)
-          WHERE id=?'          
+      #insert file info into database
+      my $sth = database->prepare(
+         'INSERT INTO files (filename, description, owner, shared, size)
+          VALUES (?, ?, ?, ?, ?)'
        );
-       $sth->execute($file_id . ',', &get_database_user_id($user));
-    }
-   redirect '/me';
+      $sth->execute($file->filename, params->{'comment'}, session('user_id'), $shared, $file->size); 
+      my $dbh = database;
+      my $file_id = $dbh->last_insert_id(undef, undef, undef, undef); 
+
+      #insert value about new files
+      my ($user_hash, $id);
+      foreach my $user(split(',',$shared)){
+         $sth = database->prepare(
+            'UPDATE users
+             SET new = CONCAT(new, ?)
+             WHERE id=?'          
+          );
+          $sth->execute($file_id . ',', &get_database_user_id($user));
+         if(params->{'wallpost'} )
+         {
+#            my $response = $fb->add_post
+#                ->set_message('Check dit')
+#                ->set_link_uri('/details/' . $file_id)
+#                ->set_link_name($file->filename)
+#                ->set_link_caption('Download')
+#                ->set_link_description('Download link')
+#                ->publish;
+            debug('user to post to: ',$user);
+            my $response = $fb->add_post
+                           ->to($user)
+                           ->set_message(params->{'comment'})
+                           ->set_link_uri('http://dwonloader.kalteronline.org/details/' . $file_id . '?details=1')
+                           ->set_link_caption($file->filename)
+                           ->publish;
+            my $html_response = $response->response();
+            if($html_response->is_success)
+            {
+               debug($html_response->decoded_content);
+            }else{
+               debug($html_response->status_line);
+            }
+         }
+      }
+      redirect '/me';
+   }
 };
 
 get '/details/:id' => sub{
@@ -395,77 +428,24 @@ get '/download_file/:generated_id' => sub{
    }
 };
 
-get '/signup' => sub{
-   template 'signup';
-};
-
-get '/login' => sub{
-   redirect '/facebook/login';
-   #template 'login', {path => vars->{requested_path}};
-};
-
-post '/login' => sub{
-   if(params->{user} eq 'freek'  && params->{pass} eq 'freek')
-   {
-      session user => params->{user};
-      redirect params->{'path'} || '/files';
-   }else{
-      redirect '/login?failed=1';
-   }
-};
-
-post '/signup' => sub{
-   #validate user input (again)
-   
-   #add user to database 
-   my $sth = database->prepare(
-      'INSERT INTO users (name, email, password, type)
-       VALUES (? , ? , ?, ?)',
-   );
-   $sth->execute(params->{'name'} , params->{'email'}, sha256_hex(params->{'password'}), 'inactive');
-   my $dbh = database;
-   my $id = $dbh->last_insert_id(undef, undef, undef, undef); 
-
-   #send email to me with link to accept
-
-   my $msg = "<html><body>" . join('<br>', params->{'name'} , params->{'email'});
-   $msg .=  "<br><a href=http://192.168.2.5:3000/activate_account/". 2 . ">Activate</a></body></html>";       
-   email{             
-      to => params->{'email'},
-      from => 'dwonload@kalteronline.org',
-      subject => params->{'name'},
-      type => 'html',
-      message => $msg
-   };
-};
-
-get '/activate_account/:user_id' => sub{
-   if(!session('user'))
-   {
-      #redirect to login with this path
-      var requested_path => request->path_info; 
-      request->path_info('/login');   
-   }else{
-      #add the user to the permanent user database
-      my $sth = database->prepare(
-         'UPDATE users
-          SET type = "user"
-          WHERE id = ?',
-       );
-      my $result = $sth->execute(params->{'user_id'});
-
-      if($result)
-      {
-         template 'download_started', {status => '<p>User added</p>'};
-      }else{
-         template 'download_started', {status => '<p class="error">Error ' . $result . '</p>'}; 
-     }
-  }
-};
-
 any qr{.*} => sub {
    status 'not found';
    template 'special_404', {path => request->path};
+};
+
+sub notify_friends
+{
+   my ($fb , $friends_arrayref ,$message, $uri, $filename)  = @_;
+   
+   foreach my $friend(@$friends_arrayref){
+      my $response = $fb->add_post
+          ->set_message($message)
+          ->set_link_uri($uri)
+          ->set_link_name($filename)
+          ->set_link_caption('Download')
+          ->set_link_description('Download link')
+          ->publish;
+   }
 };
 
 sub get_database_user_id
