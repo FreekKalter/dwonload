@@ -15,3 +15,38 @@ show_errors: 0
 # cache route resolution for maximum performance
 route_cache: 1
 
+#production machine settings
+plugins:
+   Database:
+      driver: 'mysql'
+      database: 'dwonload'
+      host: 'localhost'
+      port: 8889
+      username: 'root'
+      password: 'KoWd7pLBT'
+      connection_check_threshold: 10
+      dbi_params:
+          RaiseError: 1
+          AutoCommit: 1
+          mysql_socket: '/var/run/mysqld/mysqld.sock'
+      on_connect_do: ["SET NAMES 'utf8'", "SET CHARACTER SET 'utf8'" ]
+      log_queries: 1
+   Email:
+      ssl: 1
+      driver: smtp
+      host: smtp.gmail.com
+      port: 465
+      user: freekkalter@gmail.com
+      pass: dbxwuscstyywbgoq
+
+recaptcha:
+   public-key: '6Lc7ZMcSAAAAAPnX7ysNE3IJyzW_QTqWg4x3I5Kn'
+   private-key: '6Lc7ZMcSAAAAAPaoP1z40i2UOdjfhPb82h3hdKZw'
+
+files_path:
+   path: '/home/ec2-user/dwonloader_files/'
+
+facebook:
+    postback: "http://dwonloaderdev.kalteronline.org/facebook/postback/"
+    app_id: "215065801891619"
+    secret: "ad33873a33451540caf2667431d26eb1"

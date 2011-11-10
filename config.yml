@@ -34,31 +34,3 @@ engines:
 
 session: "Storable"
 
-facebook:
-    postback: "http://dwonloader.kalteronline.org/facebook/postback/"
-    app_id: "215065801891619"
-    secret: "ad33873a33451540caf2667431d26eb1"
-
-plugins:
-   Database:
-      driver: 'mysql'
-      database: 'dwonload'
-      host: 'localhost'
-      port: 8889
-      username: 'root'
-      password: 'KoWd7pLBT'
-      connection_check_threshold: 10
-      dbi_params:
-          RaiseError: 1
-          AutoCommit: 1
-          mysql_socket: '/var/run/mysqld/mysqld.sock'
-      on_connect_do: ["SET NAMES 'utf8'", "SET CHARACTER SET 'utf8'" ]
-      log_queries: 1
-   Email:
-      ssl: 1
-      driver: smtp
-      host: smtp.gmail.com
-      port: 465
-      user: freekkalter@gmail.com
-      pass: dbxwuscstyywbgoq
-

@@ -18,10 +18,6 @@ use YAML::Loader;
 our $VERSION = '0.1';
 
 my $content = read_file_content("../dwonload.yml");
-my $loader = YAML::Loader->new;
-my $hash = $loader->load($content);
-my $recaptcha_config = $hash->{'recaptcha'}; 
-my $files_path = $hash->{'files_path'};
 
 get '/' => sub {
    if(session('access_token')){
@@ -35,7 +31,6 @@ get '/about' => sub{
    template 'about';
 };
 
-
 get '/logout' => sub{
    session->destroy;
    redirect '/me';
@@ -43,7 +38,7 @@ get '/logout' => sub{
 
 
 get '/login' => sub { #eenmaal geauthiriseerd, vliegt door deze en postback heen
-    my $fb = Facebook::Graph->new( config->{facebook} );
+    my $fb = Facebook::Graph->new( config->{'facebook'});
     redirect $fb ->authorize
                  ->extend_permissions( qw(email offline_access publish_stream create_event rsvp_event) )
                  ->uri_as_string;
@@ -177,7 +172,7 @@ post '/upload' => sub{
       }else{
          $shared =  join(',', @{params->{'shared'}}); 
       }
-      $file->link_to($files_path->{'path'} . $file->filename);
+      $file->link_to(config->{'files_path'}->{'path'} . $file->filename);
 
       #insert file info into database
       my $sth = database->prepare(
@@ -198,27 +193,19 @@ post '/upload' => sub{
           $sth->execute($file_id . ',', &get_database_user_id($user));
          if(params->{'wallpost'} )
          {
-#            my $response = $fb->add_post
-#                ->set_message('Check dit')
-#                ->set_link_uri('/details/' . $file_id)
-#                ->set_link_name($file->filename)
-#                ->set_link_caption('Download')
-#                ->set_link_description('Download link')
-#                ->publish;
-            debug('user to post to: ',$user);
             my $response = $fb->add_post
                            ->to($user)
                            ->set_message(params->{'comment'})
                            ->set_link_uri('http://dwonloader.kalteronline.org/details/' . $file_id . '?details=1')
                            ->set_link_caption($file->filename)
                            ->publish;
-            my $html_response = $response->response();
-            if($html_response->is_success)
-            {
-               debug($html_response->decoded_content);
-            }else{
-               debug($html_response->status_line);
-            }
+#            my $html_response = $response->response();
+#            if($html_response->is_success)
+#            {
+#               debug($html_response->decoded_content);
+#            }else{
+#               debug($html_response->status_line);
+#            }
          }
       }
       redirect '/me';
@@ -238,7 +225,7 @@ get '/details/:id' => sub{
       my $c = Captcha::reCAPTCHA->new;
       template 'details', {id => $id, 
                            description => $row->{'description'} ,
-                           recaptcha => $c->get_html($recaptcha_config->{'public-key'} )#public recapthca key
+                           recaptcha => $c->get_html(config->{'recaptcha'}->{'public-key'} )#public recapthca key
                            }; 
    }else{#a session has ben made
       if(params->{'details'}){
@@ -376,7 +363,7 @@ post '/details' => sub{
    # Verify submission
    my $c = Captcha::reCAPTCHA->new;
     my $result = $c->check_answer( 
-       $recaptcha_config->{'private-key'},#private key
+       config->{'recaptcha'}->{'private-key'}, #private key
        request->remote_address,
         $challenge, $response
     );
@@ -409,9 +396,8 @@ get '/download_file/:generated_id' => sub{
          );
          $sth->execute($return_value->{'id'});
          $return_value = $sth->fetchrow_hashref;
-         debug('path: ', $files_path->{'path'});
          if($return_value){
-           return send_file($files_path->{'path'} . $return_value->{'filename'}, 
+           return send_file(config->{'files_path'}->{'path'} . $return_value->{'filename'}, 
                            system_path => 1,
                            content_type => 'application/octet-stream ',
                            filename =>  $return_value->{'filename'} );
