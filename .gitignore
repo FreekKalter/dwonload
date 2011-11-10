@@ -36,7 +36,6 @@ Thumbs.db
 
 # Project specific exludes #
 ############################
-public/less/bootstrap/*.css
 *.fuse*
 sessions/*
 public/files/*

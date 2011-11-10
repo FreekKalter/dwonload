@@ -4,6 +4,7 @@ use Dancer::Plugin::Database;
 use Dancer::Plugin::Facebook;
 use Dancer::Plugin::Email;
 use Dancer::Logger::Console;
+use Dancer::FileUtils 'read_file_content';
 
 use Data::Dumper;
 use Template;
@@ -13,7 +14,6 @@ use Math::Random::MT::Perl;
 use DateTime::Format::MySQL;
 use DateTime::Format::Epoch;
 use YAML::Loader;
-use Dancer::FileUtils 'read_file_content';
 
 our $VERSION = '0.1';
 
@@ -31,10 +31,6 @@ get '/' => sub {
  }
 };
 
-get '/login' => sub{
-   redirect '/facebook/login';
-};
-
 get '/about' => sub{
    template 'about';
 };
@@ -46,7 +42,7 @@ get '/logout' => sub{
 };
 
 
-get '/facebook/login' => sub { #eenmaal geauthiriseerd, vliegt door deze en postback heen
+get '/login' => sub { #eenmaal geauthiriseerd, vliegt door deze en postback heen
     my $fb = Facebook::Graph->new( config->{facebook} );
     redirect $fb ->authorize
                  ->extend_permissions( qw(email offline_access publish_stream create_event rsvp_event) )
@@ -54,6 +50,7 @@ get '/facebook/login' => sub { #eenmaal geauthiriseerd, vliegt door deze en post
 };
 
 get '/facebook/postback/' => sub {
+    #get fb access token and store it in the session for futher use
     my $params = request->params;
     my $fb = Facebook::Graph->new( config->{facebook} );
     $fb->request_access_token($params->{code});
@@ -64,9 +61,7 @@ get '/facebook/postback/' => sub {
     session name => $user->{first_name};
 
     #check if user exists in user database, if not add him
-    my $sth = database->prepare(
-            'SELECT fb_id FROM users WHERE fb_id=?',
-         );
+    my $sth = database->prepare( 'SELECT fb_id FROM users WHERE fb_id=?');
     $sth->execute($user->{id}) or die $sth->errstr;
     my $row = $sth->fetchrow_hashref;
     if(!$row) #user does not existst
@@ -190,8 +185,7 @@ post '/upload' => sub{
           VALUES (?, ?, ?, ?, ?)'
        );
       $sth->execute($file->filename, params->{'comment'}, session('user_id'), $shared, $file->size); 
-      my $dbh = database;
-      my $file_id = $dbh->last_insert_id(undef, undef, undef, undef); 
+      my $file_id = database->last_insert_id(undef, undef, undef, undef); 
 
       #insert value about new files
       my ($user_hash, $id);
