@@ -17,13 +17,17 @@
             <input type="submit" value="Download" />
          </form>
       <% ELSE %>
-         File size: <% size %>
-         Description: <% description %>
-         <% download_link %> 
+      <p><span>File size:</span> <% size %></p>
+            <p><span>Description:</span> <% description %></p>
          <% IF owner %>
-            Shared with: <% friends %> 
+         <p><span>Shared with:</span> <% friends %> </p>
+         <p>
             <a href="/details/<% id %>?action=delete">Delete</a>
             <a href="/details/<% id %>/edit">Edit</a>
+            <% download_link %> 
+         </p>
+            <% ELSE %>
+            <p> <% download_link %> </p>
          <% END %>
          <a href="/me">Back</a>
       <% END %><!--recaptcha -->

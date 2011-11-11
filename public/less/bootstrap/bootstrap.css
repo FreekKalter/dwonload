@@ -220,6 +220,19 @@ body {
   margin: 5px;
   padding: 5px;
 }
+#about {
+  font-size: 15px;
+}
+#about p {
+  font-size: 15px;
+}
+#about li {
+  color: #404040;
+}
+.details span {
+  color: #808080;
+  font-weight: bold;
+}
 .container {
   width: 940px;
   margin-left: auto;

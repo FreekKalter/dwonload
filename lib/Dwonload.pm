@@ -13,7 +13,6 @@ use Digest::SHA qw(sha256_hex);
 use Math::Random::MT::Perl;
 use DateTime::Format::MySQL;
 use DateTime::Format::Epoch;
-use YAML::Loader;
 
 our $VERSION = '0.1';
 
@@ -231,11 +230,22 @@ get '/details/:id' => sub{
          if($row->{'owner'} eq session('user_id')){
             $owner = "Yes";
          }
+         my $shared = '';
+         foreach my $friend (split($row->{'shared'})){
+            $sth = database->prepare(
+               'SELECT name
+                FROM users
+                WHERE fb_id=?');
+            $sth->execute($friend);
+            $row = $sth->fetchrow_hashref;
+            $shared .= $row->{'name'};
+         }
+            
          template 'details', {id => $id,
                               description => $row->{'description'},
                               size => $row->{'size'},
                               download_link => "<a href=" . &generate_temp($id) . ">Download</a>",
-                              friends => $row->{'shared'},
+                              friends => $shared,
                               owner => $owner };
       }else{
       if(!params->{'action'})
