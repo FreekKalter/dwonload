@@ -17,8 +17,6 @@ use YAML::Loader;
 
 our $VERSION = '0.1';
 
-my $content = read_file_content("../dwonload.yml");
-
 get '/' => sub {
    if(session('access_token')){
     redirect '/me';
