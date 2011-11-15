@@ -161,14 +161,18 @@ post '/upload' => sub{
       $fb->access_token(session('access_token')); #get facebook access token from users session
       my $user = $fb->fetch('me');
       my $file = request->upload('datafile');
-      my $shared ='';
+      my $shared_str ='';
+      my @shared_arr;
       unless(ref(params->{'shared'}))# not a ref
       {
-         $shared = params->{'shared'};
+         $shared_str = params->{'shared'};
+         @shared_arr = ($shared_str);
 
       }else{
-         $shared =  join(',', @{params->{'shared'}}); 
+         $shared_str =  join(',', @{params->{'shared'}}); 
+         @shared_arr =@{params->{'shared'}};
       }
+
       $file->link_to(config->{'files_path'}->{'path'} . $file->filename);
 
       #insert file info into database
@@ -176,12 +180,11 @@ post '/upload' => sub{
          'INSERT INTO files (filename, description, owner, shared, size)
           VALUES (?, ?, ?, ?, ?)'
        );
-      $sth->execute($file->filename, params->{'comment'}, session('user_id'), $shared, $file->size); 
+      $sth->execute($file->filename, params->{'comment'}, session('user_id'), $shared_str, $file->size); 
       my $file_id = database->last_insert_id(undef, undef, undef, undef); 
 
       #insert value about new files
-      my ($user_hash, $id);
-      foreach my $user(split(',',$shared)){
+      foreach my $user(split(',',$shared_str)){
          $sth = database->prepare(
             'UPDATE users
              SET new = CONCAT(new, ?)
@@ -206,6 +209,16 @@ post '/upload' => sub{
          }
       }
       redirect '/me';
+
+      my $friends_response = $fb->query->find('me/friends')->request;
+      my $friends_hash = $friends_response->as_hashref->{data};
+      my @friend_array = @$friends_hash;
+      #add friends to own database
+      foreach my $friend (@shared_arr)
+      {
+         #add tot users database
+         debug('friend', Dumper($fb->query->find($friend)->request->as_hashref->{'name'}));
+      }
    }
 };
 
