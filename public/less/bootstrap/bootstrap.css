@@ -233,6 +233,12 @@ body {
   color: #808080;
   font-weight: bold;
 }
+.input-file {
+  margin-right: 100px;
+}
+.help-inline {
+  display: none;
+}
 .container {
   width: 940px;
   margin-left: auto;

@@ -201,8 +201,7 @@ post '/upload' => sub {
         my $file       = request->upload('datafile');
         my $shared_str = '';
         my @shared_arr;
-        unless (ref(params->{'shared'}))    # not a ref
-        {
+        unless (ref(params->{'shared'})){    # not a ref 
             $shared_str = params->{'shared'};
             @shared_arr = ($shared_str);
 
@@ -238,17 +237,8 @@ post '/upload' => sub {
                       . $file_id
                       . '?details=1')->set_link_caption($file->filename)
                   ->publish;
-
-#            my $html_response = $response->response();
-#            if($html_response->is_success)
-#            {
-#               debug($html_response->decoded_content);
-#            }else{
-#               debug($html_response->status_line);
-#            }
             }
         }
-        redirect '/me';
 
         my $friends_response = $fb->query->find('me/friends')->request;
         my $friends_hash     = $friends_response->as_hashref->{data};
@@ -266,6 +256,7 @@ post '/upload' => sub {
             );
         }
     }
+     redirect '/me';
 };
 
 get '/details/:id' => sub {

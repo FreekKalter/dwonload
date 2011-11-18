@@ -11,8 +11,10 @@
        !window.jQuery && document.write('<script type="text/javascript" src="<% request.uri_base %>/javascripts/jquery.js"><\/script>')
    /* ]]> */</script>
 
-   <script src="<% request.uri_base %>/less/bootstrap/js/bootstrap-tabs.js"></script>
-   <script src="<% request.uri_base %>/less/bootstrap/js/bootstrap-alerts.js"></script>
+   <script type="text/javascript" src="<% request.uri_base %>/less/bootstrap/js/bootstrap-tabs.js"></script>
+   <script type="text/javascript" src="<% request.uri_base %>/less/bootstrap/js/bootstrap-alerts.js"></script>
+   <script type="text/javascript" src="<% request.uri_base %>/javascripts/jquery.form.js"></script>
+   <script type="text/javascript" src="<% request.uri_base %>/javascripts/dwonloader.js"></script>
    <script>
       $(function () {
          $('.tabs').tabs();

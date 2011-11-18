@@ -28,6 +28,8 @@ body{background-attachment:fixed;background-color:#808080;background-repeat:repe
 #about p{font-size:15px;}
 #about li{color:#404040;}
 .details span{color:#808080;font-weight:bold;}
+.input-file{margin-right:100px;}
+.help-inline{display:none;}
 .container{width:940px;margin-left:auto;margin-right:auto;zoom:1;min-height:1000px;}.container:before,.container:after{display:table;content:"";zoom:1;*display:inline;}
 .container:after{clear:both;}
 .centerblock{display:block;margin-left:auto;margin-right:auto;width:680px;}
