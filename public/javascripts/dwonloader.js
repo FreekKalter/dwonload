@@ -1,5 +1,10 @@
 $(document).ready(function(){
    $('#upload-form').ajaxForm({beforeSubmit: validate});
+   $('.tabs').tabs();
+   console.log('ello wolrd');
+    $('.tabs').bind('change', function (e) {
+       console.log(e.target);
+    });
 });
 
 function validate(formData, jqForm, options) { 
