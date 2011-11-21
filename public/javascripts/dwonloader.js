@@ -1,11 +1,18 @@
 $(document).ready(function(){
    $('#upload-form').ajaxForm({beforeSubmit: validate});
-   $('.tabs').tabs();
-   console.log('ello wolrd');
-    $('.tabs').bind('change', function (e) {
-       console.log(e.target);
-    });
+
+   var tabs = new Array();
+   tabs["#shared"] = "/me/files_i_shared";
+   tabs["#others"] = "/me/files_shared_with_me";
+   tabs["#upload"] = "/me/friends_upload_form"; 
+
+   $('.tabs').bind('change', function (e) {
+      var regex =/#\w*/gi;
+      var div =   e.target.href.match(regex);
+      $(div + '-inner').load(tabs[div]);
+   });
 });
+
 
 function validate(formData, jqForm, options) { 
    var form = jqForm[0];

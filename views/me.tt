@@ -4,8 +4,10 @@
    <li><a href="#upload">Upload</a></li>
 </ul>
       
-<div class="tab-content">
+<div class="test" id="test">
+</div>
 
+<div class="tab-content">
 
    <div id="others" class="active">
       <table class="zebra-striped">
@@ -16,8 +18,8 @@
                <th>Owner</th>
             </tr>
          </thead>
-         <tbody>
-            <% shared_files %>
+         <tbody id="others-inner">
+            <!--get via ajax request -->
          </tbody>
       </table>
    </div>
@@ -30,8 +32,8 @@
                <th>Size</th>
             </tr>
          </thead>
-         <tbody>
-            <% file_list %>
+         <tbody id="shared-inner">
+            <!--get via ajax request -->
          </tbody>
       </table>
    </div>
@@ -58,7 +60,7 @@
                </div>
 
                <div class="clearfix">
-                  <label>Link bij vrienden op wall posten: </label>
+                  <label>Post link on friends wall: </label>
                   <div class="input">
                      <input type="checkbox" value="yes" name="wallpost" ></input>
                   </div>
@@ -67,8 +69,8 @@
                <div id="friends-container" class="clearfix">
                   <label>Friends to share with:</label>
                   <div id="friends" class="input">
-                     <ul class="inputs-list">
-                        <% friends %>
+                     <ul id="upload-inner" class="inputs-list">
+                        <!--get via ajax request -->
                      </ul>
                      <span id="friends-help" class="help-inline">Select at least 1 friend</span>
                   </div>

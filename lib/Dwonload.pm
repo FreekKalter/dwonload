@@ -1,5 +1,6 @@
 package Dwonload;
 use Dancer ':syntax';
+use Dancer::Plugin::Ajax;
 use Dancer::Plugin::Database;
 use Dancer::Plugin::Facebook;
 use Dancer::Plugin::Email;
@@ -76,119 +77,128 @@ get '/facebook/postback/' => sub {
 };
 
 get '/me' => sub {
-    my $fb = Facebook::Graph->new(config->{facebook});
-    if (!session('access_token')) {
-        redirect '/';
-    }
-    else {
-        $fb->access_token(session('access_token'))
-          ;    #get facebook access token from users session
-        my $user = $fb->fetch('me');
-
-        #generate list of friends to share files with
-        my $friends_response = $fb->query->find('me/friends')->request;
-        my $friends_hash     = $friends_response->as_hashref->{data};
-        my @friend_array     = @$friends_hash;
-        my $friends          = '';
-        my $half             = scalar(@friend_array) / 2;
-        my $counter          = 0;
-        foreach my $friend (@friend_array) {
-            $counter++;
-            $friends
-              .= '<label><input type="checkbox" value="'
-              . $friend->{'id'}
-              . '" name="shared" ><span>'
-              . $friend->{name}
-              . '</span></input></label>';
-
-            #      if($counter == $half){
-            #         $friends .= '</div><div class="span6 columns">';
-            #      }
-        }
-
-        #generate list of uploaded files
-        my $sth = database->prepare(
-            'SELECT files.id, files.filename, files.description, files.owner, files.size
-          FROM files, users
-          WHERE files.owner = users.id
-          AND users.fb_id=?',
-        );
-        $sth->execute($user->{id});
-        $sth->bind_columns(\my ($id, $filename, $description, $owner, $size));
-        my $file_list = '';
-        while ($sth->fetch()) {
-            $file_list .= '<tr>
-                           <td><a href="/details/' 
-              . $id
-              . '?details=1">'
-              . $filename
-              . '</a><a href="/details/'
-              . $id
-              . '"> <em>download</em> </a></td>
-                           <td>' . &get_size($size) . '</td>
-                        </tr>';
-        }
-
-        #get file_ids that are new since last login
-        $sth = database->prepare(
-            'SELECT new
-          FROM users
-          WHERE id=?'
-        );
-        $sth->execute(&get_database_user_id($user->{'id'}))
-          or die $sth->errstr;
-        my $new_files_hash = $sth->fetchrow_hashref;
-        my $new_files      = $new_files_hash->{'new'};
-
-        #empty the new field, cause the user has seen them now
-        $sth = database->prepare(
-            'UPDATE users
-          SET new=""
-          WHERE id=?'
-        );
-        $sth->execute(&get_database_user_id($user->{'id'}))
-          or die $sth->errstr;
-
-        #generate list of files shared with me
-        $sth = database->prepare(
-            'SELECT files.*, users.fb_id FROM files, users
-          WHERE shared REGEXP ? AND files.owner = users.id'
-        );
-        $sth->execute($user->{'id'});
-        $sth->bind_columns(
-            \(  $id,        $filename, $description, $owner,
-                my $shared, $size,     my $fb_id
-            )
-        );
-
-        my $shared_files = '';
-        while ($sth->fetch()) {
-            my $friend = $fb->fetch($fb_id);
-            $shared_files .= '<tr>
-                              <td><a href="/details/' 
-              . $id
-              . '?details=1">'
-              . $filename
-              . '</a><a href="/details/'
-              . $id
-              . '"> <em>download</em> </a></td>';
-            if (grep $_ eq $id, split(',', $new_files)) {
-                $shared_files .= '<span class="label success">New</span>';
-            }
-            $shared_files .= '</td>
-                              <td><em>' . &get_size($size) . '</em></td>
-                              <td><em>' . $friend->{'name'} . '</em></td>
-                           </tr>';
-        }
-        template 'me',
-          { file_list    => $file_list,
-            username     => session('name'),
-            friends      => $friends,
-            shared_files => $shared_files
-          };
-    }
+  template 'me';
 };
 
+ajax '/me/files_shared_with_me' => sub{
+   my $fb = &check_auth();
+   if(!$fb){
+      redirect '/about';
+   }
+    my $response = $fb->query->find('me')->request;
+    my $user     = $response->as_hashref;
+  #get file_ids that are new since last login
+  my $sth = database->prepare(
+      'SELECT new
+    FROM users
+    WHERE id=?'
+  );
+  $sth->execute(&get_database_user_id($user->{'id'}))
+    or die $sth->errstr;
+  my $new_files_hash = $sth->fetchrow_hashref;
+  my $new_files      = $new_files_hash->{'new'};
+
+
+  #empty the new field, cause the user has seen them now
+  $sth = database->prepare(
+      'UPDATE users
+       SET new=""
+       WHERE id=?'
+  );
+  $sth->execute(&get_database_user_id($user->{'id'}))
+    or die $sth->errstr;
+ 
+
+   #generate list of files shared with me
+  $sth = database->prepare(
+      'SELECT files.*, users.fb_id 
+       FROM files, users
+       WHERE shared REGEXP ? AND files.owner = users.id'
+  );
+  $sth->execute($user->{'id'});
+  $sth->bind_columns( \my ( $id,  $filename,  $description,  $owner,  $shared,  $size, $fb_id));
+  my $shared_files = '';
+  while ($sth->fetch()) {
+      my $friend = $fb->fetch($fb_id);
+      $shared_files .= '<tr>
+         <td><a href="/details/' . $id . '?details=1">' . $filename . '</a><a href="/details/' . $id . '"> <em>download</em> </a></td>';
+      if (grep $_ eq $id, split(',', $new_files)) {
+          $shared_files .= '<span class="label success">New</span>';
+      }
+      $shared_files .= '</td>
+                        <td><em>' . &get_size($size) . '</em></td>
+                        <td><em>' . $friend->{'name'} . '</em></td>
+                     </tr>';
+  }
+  debug($shared_files);
+  return $shared_files;
+};
+
+ajax '/me/files_i_shared' => sub{
+   my $fb = &check_auth();
+   if(!$fb){
+      redirect '/about';
+   }
+   
+    my $response = $fb->query->find('me')->request;
+    my $user     = $response->as_hashref;
+   #generate list of uploaded files
+   my $sth = database->prepare(
+      'SELECT files.id, files.filename, files.description, files.owner, files.size
+       FROM files, users
+       WHERE files.owner = users.id
+       AND users.fb_id=?',
+   );
+   $sth->execute($user->{id});
+   $sth->bind_columns(\my ($id, $filename, $description, $owner, $size));
+   my $file_list = '';
+   while ($sth->fetch()) {
+      $file_list .= '<tr>
+      <td><a href="/details/' . $id . '?details=1">' . $filename . '</a><a href="/details/' . $id .'"> <em>download</em> </a></td>
+                  <td>' . &get_size($size) . '</td>
+                  </tr>';
+   } 
+   return $file_list;
+};
+
+ajax '/me/friends_upload_form' => sub{
+   my $fb = &check_auth();
+   if(!$fb){
+      redirect '/about';
+   }
+     #generate list of friends to share files with
+     my $friends_response = $fb->query->find('me/friends')->request;
+     my $friends_hash     = $friends_response->as_hashref->{data};
+     my @friend_array     = @$friends_hash;
+     my $friends          = '';
+     my $half             = scalar(@friend_array) / 2;
+     my $counter          = 0;
+     foreach my $friend (@friend_array) {
+         $counter++;
+         $friends
+           .= '<label><input type="checkbox" value="'
+           . $friend->{'id'}
+           . '" name="shared" ><span>'
+           . $friend->{name}
+           . '</span></input></label>';
+
+         #      if($counter == $half){
+         #         $friends .= '</div><div class="span6 columns">';
+         #      }
+     }
+   return $friends;
+};
+
+sub check_auth{
+    my $fb = Facebook::Graph->new(config->{facebook});
+    if (!session('access_token')) {
+      return undef;
+    }
+    else {
+      $fb->access_token(session('access_token'));    #get facebook access token from users session
+      return $fb;
+    }
+};
 post '/upload' => sub {
     my $fb = Facebook::Graph->new(config->{facebook});
     if (!session('access_token')) {
