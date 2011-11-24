@@ -205,6 +205,7 @@ post '/upload' => sub {
         redirect '/';
     }
     else {
+       debug('params', Dumper(params));
         $fb->access_token(session('access_token'))
           ;    #get facebook access token from users session
         my $user       = $fb->fetch('me');
@@ -249,24 +250,8 @@ post '/upload' => sub {
                   ->publish;
             }
         }
-
-        my $friends_response = $fb->query->find('me/friends')->request;
-        my $friends_hash     = $friends_response->as_hashref->{data};
-        my @friend_array     = @$friends_hash;
-
-        #add friends to own database
-        foreach my $friend (@shared_arr) {
-
-            #add tot users database
-            debug(
-                'friend',
-                Dumper(
-                    $fb->query->find($friend)->request->as_hashref->{'name'}
-                )
-            );
-        }
     }
-     redirect '/me';
+    #redirect '/me';
 };
 
 get '/details/:id' => sub {

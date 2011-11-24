@@ -34,3 +34,6 @@ engines:
 
 session: "Storable"
 
+plack_middlewares:
+   -
+      - Plack::Middleware::ReverseProxy

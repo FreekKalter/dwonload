@@ -12,9 +12,12 @@
    /* ]]> */</script>
 
    <script type="text/javascript" src="<% request.uri_base %>/javascripts/bootstrap-tabs.js"></script>
-   <script type="text/javascript" src="<% request.uri_base %>/less/bootstrap/js/bootstrap-alerts.js"></script>
+   <!--<script type="text/javascript" src="<% request.uri_base %>/javascripts/jquery.uploadProgress.js"></script>-->
+   <script type="text/javascript" src="<% request.uri_base %>/javascripts/upload.js"></script>
+   <!--<script type="text/javascript" src="<% request.uri_base %>/less/bootstrap/js/bootstrap-alerts.js"></script>-->
    <script type="text/javascript" src="<% request.uri_base %>/javascripts/jquery.form.js"></script>
    <script type="text/javascript" src="<% request.uri_base %>/javascripts/dwonloader.js"></script>
+
    <link rel="stylesheet" href="<% request.uri_base %>/less/bootstrap/bootstrap.css" />
 </head>
 <body>

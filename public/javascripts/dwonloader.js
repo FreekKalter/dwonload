@@ -11,6 +11,7 @@ $(document).ready(function(){
       var div =   e.target.href.match(regex);
       $(div + '-inner').load(tabs[div]);
    });
+
 });
 
 

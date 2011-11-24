@@ -239,6 +239,18 @@ body {
 .help-inline {
   display: none;
 }
+.bar {
+  width: 300px;
+}
+#progress {
+  background: #404040;
+  margin-top: 5px;
+}
+#progressbar {
+  height: 14px;
+  background: white;
+  width: 0px;
+}
 .container {
   width: 940px;
   margin-left: auto;
