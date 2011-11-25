@@ -14,8 +14,13 @@ use Digest::SHA qw(sha256_hex);
 use Math::Random::MT::Perl;
 use DateTime::Format::MySQL;
 use DateTime::Format::Epoch;
+use Cache::Memcached::Fast;
+use Digest::MD5 qw(md5 md5_hex md5_base64);
 
 our $VERSION = '0.1';
+my $memd = new Cache::Memcached::Fast({
+   servers => [ '127.0.0.1:11211' ]
+});
 
 get '/' => sub {
     if (session('access_token')) {
@@ -32,12 +37,11 @@ get '/about' => sub {
 
 get '/logout' => sub {
     session->destroy;
-    redirect '/me';
+    redirect '/about';
 };
 
 
-get '/login' =>
-  sub {    #eenmaal geauthiriseerd, vliegt door deze en postback heen
+get '/login' => sub {    #eenmaal geauthiriseerd, vliegt door deze en postback heen
     my $fb = Facebook::Graph->new(config->{'facebook'});
     redirect $fb ->authorize->extend_permissions(
         qw(email offline_access publish_stream create_event rsvp_event))
@@ -57,6 +61,7 @@ get '/facebook/postback/' => sub {
     session name => $user->{first_name};
 
     #check if user exists in user database, if not add him
+
     my $sth = database->prepare('SELECT fb_id FROM users WHERE fb_id=?');
     $sth->execute($user->{id}) or die $sth->errstr;
     my $row = $sth->fetchrow_hashref;
@@ -69,14 +74,26 @@ get '/facebook/postback/' => sub {
         $sth->execute($user->{first_name}, $user->{email}, $user->{id})
           or die $sth->errstr;
     }
-    $sth = database->prepare('SELECT id FROM users WHERE fb_id=?');
-    $sth->execute($user->{id});
-    $row = $sth->fetchrow_hashref;
-    session user_id => $row->{id};
+    my ($mem, $sql, $key);
+    $sql = 'SELECT id FROM users WHERE fb_id=?';
+    $key = 'SQL:' . $user->{id} . ':' . md5($sql);
+    if(defined ($mem = $memd->get($key))){
+       session user_id => $mem;
+    }else{
+       $sth = database->prepare($sql);
+       $sth->execute($user->{id});
+       $row = $sth->fetchrow_hashref;
+       session user_id => $row->{id};
+       $memd->set($key, $row->{id});
+    }
     redirect '/me';
 };
 
 get '/me' => sub {
+   my $fb = &check_auth();
+   if(!$fb){
+      redirect '/about';
+   }
   template 'me';
 };
 
