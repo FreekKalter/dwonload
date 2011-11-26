@@ -84,7 +84,7 @@ get '/facebook/postback/' => sub {
        $sth->execute($user->{id});
        $row = $sth->fetchrow_hashref;
        session user_id => $row->{id};
-       $memd->set($key, $row->{id});
+       $memd->set($key, $row->{id}, 600);
     }
     redirect '/me';
 };
@@ -127,27 +127,32 @@ ajax '/me/files_shared_with_me' => sub{
  
 
    #generate list of files shared with me
-  $sth = database->prepare(
-      'SELECT files.*, users.fb_id 
-       FROM files, users
-       WHERE shared REGEXP ? AND files.owner = users.id'
-  );
-  $sth->execute($user->{'id'});
-  $sth->bind_columns( \my ( $id,  $filename,  $description,  $owner,  $shared,  $size, $fb_id));
-  my $shared_files = '';
-  while ($sth->fetch()) {
-      my $friend = $fb->fetch($fb_id);
-      $shared_files .= '<tr>
-         <td><a href="/details/' . $id . '?details=1">' . $filename . '</a><a href="/details/' . $id . '"> <em>download</em> </a></td>';
-      if (grep $_ eq $id, split(',', $new_files)) {
-          $shared_files .= '<span class="label success">New</span>';
-      }
-      $shared_files .= '</td>
-                        <td><em>' . &get_size($size) . '</em></td>
-                        <td><em>' . $friend->{'name'} . '</em></td>
-                     </tr>';
+   my ($mem, $sql, $key);
+   my $shared_files = '';
+   $sql = 'SELECT files.*, users.fb_id 
+          FROM files, users
+          WHERE shared REGEXP ? AND files.owner = users.id';
+   $key = 'SQL:' . $user->{id} . ':' . md5($sql);
+   if(defined ($mem = $memd->get($key))){
+      $shared_files = $mem;
+   }else{
+     $sth = database->prepare($sql);
+     $sth->execute($user->{'id'});
+     $sth->bind_columns( \my ( $id,  $filename,  $description,  $owner,  $shared,  $size, $fb_id));
+     while ($sth->fetch()) {
+         my $friend = $fb->fetch($fb_id);
+         $shared_files .= '<tr>
+            <td><a href="/details/' . $id . '?details=1">' . $filename . '</a><a href="/details/' . $id . '"> <em>download</em> </a></td>';
+         if (grep $_ eq $id, split(',', $new_files)) {
+             $shared_files .= '<span class="label success">New</span>';
+         }
+         $shared_files .= '</td>
+                           <td><em>' . &get_size($size) . '</em></td>
+                           <td><em>' . $friend->{'name'} . '</em></td>
+                        </tr>';
+     }
+     $memd->set($key, $shared_files, 600); 
   }
-  debug($shared_files);
   return $shared_files;
 };
 

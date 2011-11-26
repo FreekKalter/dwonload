@@ -19,7 +19,7 @@ function openProgressBar() {
 }
 
 function fetch(uuid) {
- var bar_width = 400;
+ var bar_width = 300;
  req = new XMLHttpRequest();
  req.open("GET", "/progress", 1);
  req.setRequestHeader("X-Progress-ID", uuid);
