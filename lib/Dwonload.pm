@@ -280,14 +280,14 @@ get '/details/:id' => sub {
     my $id  = params->{id};
     my $sth = database->prepare('SELECT * FROM files WHERE id = ?',);
     $sth->execute($id);
-    my $row = $sth->fetchrow_hashref;
+    my $file= $sth->fetchrow_hashref;
     if (!session('name')) {
 
         #recaptcha
         my $c = Captcha::reCAPTCHA->new;
         template 'details', {
             id          => $id,
-            description => $row->{'description'},
+            description => $file->{'description'},
             recaptcha   => $c->get_html(
                 config->{'recaptcha'}->{'public-key'})    #public recapthca key
         };
@@ -295,25 +295,25 @@ get '/details/:id' => sub {
     else {    #a session has ben made
         if (params->{'details'}) {
             my $owner = undef;
-            if ($row->{'owner'} eq session('user_id')) {
+            if ($file->{'owner'} eq session('user_id')) {
                 $owner = "Yes";
             }
             my $shared = '';
-            foreach my $friend (split($row->{'shared'})) {
+            foreach my $friend (split(',', $file->{'shared'})) {
                 $sth = database->prepare(
                     'SELECT name
-                FROM users
-                WHERE fb_id=?'
+                      FROM users
+                      WHERE fb_id=?'
                 );
                 $sth->execute($friend);
-                $row = $sth->fetchrow_hashref;
+                my $row = $sth->fetchrow_hashref;
                 $shared .= $row->{'name'};
             }
 
             template 'details',
               { id            => $id,
-                description   => $row->{'description'},
-                size          => $row->{'size'},
+                description   => $file->{'description'},
+                size          => &get_size($file->{'size'}),
                 download_link => "<a href="
                   . &generate_temp($id)
                   . ">Download</a>",
@@ -334,7 +334,7 @@ get '/details/:id' => sub {
              WHERE id=?'
                 );
                 $sth->execute($id);
-                $row = $sth->fetchrow_hashref;
+                my $row = $sth->fetchrow_hashref;
                 if ($row->{'owner'} eq session('user_id')) {
                     if (params->{'action'} eq 'delete') {
                         if (database->quick_delete('files', {id => $id})) {
@@ -577,7 +577,6 @@ sub generate_temp {
     for (0 .. 10) {
         $random_download_id .= int($gen->rand(9));
     }
-    debug('Generated string:', $random_download_id);
 
     #add this to the database with a timeout
     my $sth = database->prepare('INSERT INTO downloads VALUES (? , ? , ?)',);
