@@ -18,7 +18,7 @@
    <script type="text/javascript" src="<% request.uri_base %>/javascripts/jquery.form.js"></script>
    <script type="text/javascript" src="<% request.uri_base %>/javascripts/dwonloader.js"></script>
 
-   <link rel="stylesheet" href="<% request.uri_base %>/less/bootstrap/bootstrap.css" />
+   <link rel="stylesheet" href="<% request.uri_base %>/less/bootstrap/bootstrap.min.css" />
 </head>
 <body>
    <div class="container">
