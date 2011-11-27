@@ -197,16 +197,10 @@ ajax '/me/friends_upload_form' => sub{
      my $counter          = 0;
      foreach my $friend (@friend_array) {
          $counter++;
-         $friends
-           .= '<label><input type="checkbox" value="'
-           . $friend->{'id'}
-           . '" name="shared" ><span>'
-           . $friend->{name}
-           . '</span></input></label>';
-
-         #      if($counter == $half){
-         #         $friends .= '</div><div class="span6 columns">';
-         #      }
+         $friends .= '<label><input type="checkbox" value="' . $friend->{'id'} . '" name="shared" ><span>' . $friend->{name} . '</span></input></label>';
+         #if($counter == $half){
+         #   $friends .= '</div><div class="span6 columns">';
+         #}
      }
    return $friends;
 };
@@ -222,8 +216,8 @@ sub check_auth{
     }
 };
 post '/upload' => sub {
-    my $fb = Facebook::Graph->new(config->{facebook});
-    if (!session('access_token')) {
+    my $fb = &check_auth();
+    if (!$fb) {
         redirect '/';
     }
     else {
@@ -277,88 +271,99 @@ post '/upload' => sub {
 };
 
 get '/details/:id' => sub {
-    my $id  = params->{id};
-    my $sth = database->prepare('SELECT * FROM files WHERE id = ?',);
-    $sth->execute($id);
-    my $file= $sth->fetchrow_hashref;
-    if (!session('name')) {
-
-        #recaptcha
-        my $c = Captcha::reCAPTCHA->new;
-        template 'details', {
-            id          => $id,
-            description => $file->{'description'},
-            recaptcha   => $c->get_html(
-                config->{'recaptcha'}->{'public-key'})    #public recapthca key
-        };
+    my $fb = Facebook::Graph->new(config->{facebook});
+    if (!session('access_token')) {
+        redirect '/';
     }
-    else {    #a session has ben made
-        if (params->{'details'}) {
-            my $owner = undef;
-            if ($file->{'owner'} eq session('user_id')) {
-                $owner = "Yes";
-            }
-            my $shared = '';
-            foreach my $friend (split(',', $file->{'shared'})) {
-                $sth = database->prepare(
-                    'SELECT name
-                      FROM users
-                      WHERE fb_id=?'
-                );
-                $sth->execute($friend);
-                my $row = $sth->fetchrow_hashref;
-                $shared .= $row->{'name'};
-            }
+    else {
+       my $id  = params->{id};
+       my $sth = database->prepare('SELECT * FROM files WHERE id = ?',);
+       $sth->execute($id);
+       my $file= $sth->fetchrow_hashref;
+       if (!session('name')) {
 
-            template 'details',
-              { id            => $id,
-                description   => $file->{'description'},
-                size          => &get_size($file->{'size'}),
-                download_link => "<a href="
-                  . &generate_temp($id)
-                  . ">Download</a>",
-                friends => $shared,
-                owner   => $owner
-              };
-        }
-        else {
-            if (!params->{'action'}) {
-                redirect &generate_temp($id);
-            }
-            else {
+           #recaptcha
+           my $c = Captcha::reCAPTCHA->new;
+           template 'details', {
+               id          => $id,
+               description => $file->{'description'},
+               recaptcha   => $c->get_html(
+                   config->{'recaptcha'}->{'public-key'})    #public recapthca key
+           };
+       }
+       else {    #a session has ben made
+           if (params->{'details'}) {
+               my $owner = undef;
+               if ($file->{'owner'} eq session('user_id')) {
+                   $owner = "Yes";
+               }
+               my $shared = '';
+               foreach my $friend (split(',', $file->{'shared'})) {
+                  my $fb_friend =$fb->fetch($friend);
+                  $shared .= $fb_friend->{'name'} . ", ";
 
-                #check if users is owner of the file
-                $sth = database->prepare(
-                    'SELECT owner
-             FROM files
-             WHERE id=?'
-                );
-                $sth->execute($id);
-                my $row = $sth->fetchrow_hashref;
-                if ($row->{'owner'} eq session('user_id')) {
-                    if (params->{'action'} eq 'delete') {
-                        if (database->quick_delete('files', {id => $id})) {
-                            template 'details',
-                              {error => 'y', description => 'File deleted'};
-                        }
-                        else {
-                            template 'details',
-                              { error       => 'y',
-                                description => 'Something went wrong'
-                              };
-                        }
+   #                $sth = database->prepare(
+   #                    'SELECT name
+   #                      FROM users
+   #                      WHERE fb_id=?'
+   #                );
+   #                $sth->execute($friend);
+   #                my $row = $sth->fetchrow_hashref;
+   #                $shared .= $row->{'name'};
+               }
+               chop($shared);
+               chop($shared);
 
-                        #delete acutal file
-                    }
-                }
-                else {
-                    template 'details',
-                      { error       => 'y',
-                        description => 'You are not the owner of the file'
-                      };
-                }
-            }
-        }
+               template 'details',
+                 { id            => $id,
+                   description   => $file->{'description'},
+                   size          => &get_size($file->{'size'}),
+                   download_link => "<a href="
+                     . &generate_temp($id)
+                     . ">Download</a>",
+                   friends => $shared,
+                   owner   => $owner
+                 };
+           }
+           else {
+               if (!params->{'action'}) {
+                   redirect &generate_temp($id);
+               }
+               else {
+
+                   #check if users is owner of the file
+                   $sth = database->prepare(
+                       'SELECT owner
+                FROM files
+                WHERE id=?'
+                   );
+                   $sth->execute($id);
+                   my $row = $sth->fetchrow_hashref;
+                   if ($row->{'owner'} eq session('user_id')) {
+                       if (params->{'action'} eq 'delete') {
+                           if (database->quick_delete('files', {id => $id})) {
+                               template 'details',
+                                 {error => 'y', description => 'File deleted'};
+                           }
+                           else {
+                               template 'details',
+                                 { error       => 'y',
+                                   description => 'Something went wrong'
+                                 };
+                           }
+
+                           #delete acutal file
+                       }
+                   }
+                   else {
+                       template 'details',
+                         { error       => 'y',
+                           description => 'You are not the owner of the file'
+                         };
+                   }
+               }
+           }
+       }
     }
 };
 
