@@ -41,47 +41,51 @@
    <div id="upload">
       <div class="centerblock">
          <form id="upload-form" enctype="multipart/form-data" action="/upload" method="post" onsubmit="openProgressBar(); return true;">
-            <fieldset>
-               <!--<legend><strong>Upload a file to share with your friends.</strong></legend>-->
-               <div class="clearfix">
-                  <label for="comment">Comment:</label>
-                  <div class="input" id="comment">
-                     <textarea class="xxlarge" rows="3" name="comment" style="width: 304px; height: 60px;"></textarea>
-                  </div>
-               </div>
+            <div class="row">
+               <div class="span12">
+                  <fieldset>
+                     <!--<legend><strong>Upload a file to share with your friends.</strong></legend>-->
+                     <div class="clearfix">
+                        <label for="comment">Comment:</label>
+                        <div class="input" id="comment">
+                           <textarea class="xxlarge" rows="3" name="comment" style="width: 304px; height: 60px;"></textarea>
+                        </div>
+                     </div>
 
-               <div id="datafile-container" class="clearfix">
-                  <label for="datafile">File to share: </label>
-                  <div id="datafile" class="input" >
-                     <input class="input-file" type="file" id="datafile" name="datafile">
-                     <span id="datafile-help" class="help-inline">No file selected to upload.</span>
+                     <div id="datafile-container" class="clearfix">
+                        <label for="datafile">File to share: </label>
+                        <div id="datafile" class="input" >
+                           <input class="input-file" type="file" id="datafile" name="datafile">
+                           <span id="datafile-help" class="help-inline">No file selected to upload.</span>
 
-                      <div id="progress" class="bar">
-                       <div id="progressbar" > </div>
-                      </div>
-                      <div id="tp"></div>
+                            <div id="progress" class="bar">
+                             <div id="progressbar" > </div>
+                            </div>
+                            <div id="tp"></div>
 
-                  </div><!-- datafile --> 
-               </div>  <!--datafile-container-->
+                        </div><!-- datafile --> 
+                     </div>  <!--datafile-container-->
 
-               <div class="clearfix">
-                  <label>Post link on friends wall: </label>
-                  <div class="input">
-                     <input type="checkbox" value="yes" name="wallpost" ></input>
-                  </div>
-               </div>
+                     <div class="clearfix">
+                        <label>Post link on friends wall: </label>
+                        <div class="input">
+                           <input type="checkbox" value="yes" name="wallpost" ></input>
+                        </div>
+                     </div>
 
-               <div id="friends-container" class="clearfix">
-                  <label>Friends to share with:</label>
-                  <div id="friends" class="input">
-                     <ul id="upload-inner" class="inputs-list">
-                        <!--get via ajax request -->
-                     </ul>
-                     <span id="friends-help" class="help-inline">Select at least 1 friend</span>
-                  </div>
-               </div>
-               <input type="submit" value="Upload" />
-            </fieldset>
+                     <div id="friends-container">
+                        <label>Friends to share with:</label>
+                        <div id="friends" class="input">
+                           <ul id="upload-inner" class="inputs-list">
+                              <!--get via ajax request -->
+                           </ul>
+                           <span id="friends-help" class="help-inline">Select at least 1 friend</span>
+                        </div>
+                     </div>
+                     <input type="submit" value="Upload" />
+                  </fieldset>
+               </div><!-- level1 column --> 
+            </div><!-- row -->
          </form>
       </div><!--center-->
    </div>

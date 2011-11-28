@@ -192,16 +192,17 @@ ajax '/me/friends_upload_form' => sub{
      my $friends_response = $fb->query->find('me/friends')->request;
      my $friends_hash     = $friends_response->as_hashref->{data};
      my @friend_array     = @$friends_hash;
-     my $friends          = '';
-     my $half             = scalar(@friend_array) / 2;
+     my $friends          = '<div class="row"><div class="span4">';
+     my $half             = sprintf("%d", scalar(@friend_array) / 2);
      my $counter          = 0;
      foreach my $friend (@friend_array) {
          $counter++;
          $friends .= '<label><input type="checkbox" value="' . $friend->{'id'} . '" name="shared" ><span>' . $friend->{name} . '</span></input></label>';
-         #if($counter == $half){
-         #   $friends .= '</div><div class="span6 columns">';
-         #}
+         if($counter == $half){
+            $friends .= '</div><div class="span4">';
+         }
      }
+     $friends .= '</div></div>'; #close div.span6 and div.column
    return $friends;
 };
 
@@ -421,20 +422,12 @@ get '/details/:id/edit' => sub {
             my $friends          = '';
             foreach my $friend (@friend_array) {
                 if (grep $_ eq $friend->{'id'}, @already_shared) {
-                    $friends
-                      .= '<label><input type="checkbox" value="'
-                      . $friend->{'id'}
-                      . '" name="shared" checked="yes"><span>'
-                      . $friend->{name}
-                      . '</span></input></label>';
+                    $friends .= '<label><input type="checkbox" value="' . $friend->{'id'} . '" name="shared" checked="yes">
+                                 <span>' . $friend->{name} . '</span></input></label>';
                 }
                 else {
-                    $friends
-                      .= '<label><input type="checkbox" value="'
-                      . $friend->{'id'}
-                      . '" name="shared" ><span>'
-                      . $friend->{name}
-                      . '</span></input></label>';
+                    $friends .= '<label><input type="checkbox" value="' . $friend->{'id'} . '" name="shared" ><span>'
+                               . $friend->{name} . '</span></input></label>';
                 }
             }
             template 'details_form',
