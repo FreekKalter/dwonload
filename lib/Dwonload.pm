@@ -16,6 +16,7 @@ use DateTime::Format::MySQL;
 use DateTime::Format::Epoch;
 use Cache::Memcached::Fast;
 use Digest::MD5 qw(md5 md5_hex md5_base64);
+use Locale::TextDomain qw(dwonloader);
 
 our $VERSION = '0.1';
 my $memd = new Cache::Memcached::Fast({
@@ -104,17 +105,16 @@ ajax '/me/files_shared_with_me' => sub{
    }
     my $response = $fb->query->find('me')->request;
     my $user     = $response->as_hashref;
+    my $database_id = &get_database_user_id($user->{'id'});
   #get file_ids that are new since last login
   my $sth = database->prepare(
       'SELECT new
     FROM users
     WHERE id=?'
   );
-  $sth->execute(&get_database_user_id($user->{'id'}))
-    or die $sth->errstr;
+  $sth->execute($database_id) or die $sth->errstr;
   my $new_files_hash = $sth->fetchrow_hashref;
   my $new_files      = $new_files_hash->{'new'};
-
 
   #empty the new field, cause the user has seen them now
   $sth = database->prepare(
@@ -122,8 +122,7 @@ ajax '/me/files_shared_with_me' => sub{
        SET new=""
        WHERE id=?'
   );
-  $sth->execute(&get_database_user_id($user->{'id'}))
-    or die $sth->errstr;
+  $sth->execute($database_id) or die $sth->errstr;
  
 
    #generate list of files shared with me
@@ -137,14 +136,15 @@ ajax '/me/files_shared_with_me' => sub{
       $shared_files = $mem;
    }else{
      $sth = database->prepare($sql);
-     $sth->execute($user->{'id'});
+     $sth->execute($user->{'id'}) or die $sth->errstr;
      $sth->bind_columns( \my ( $id,  $filename,  $description,  $owner,  $shared,  $size, $fb_id));
      while ($sth->fetch()) {
+        debug('id: ', $id);
          my $friend = $fb->fetch($fb_id);
          $shared_files .= '<tr>
             <td><a href="/details/' . $id . '?details=1">' . $filename . '</a><a href="/details/' . $id . '"> <em>download</em> </a></td>';
          if (grep $_ eq $id, split(',', $new_files)) {
-             $shared_files .= '<span class="label success">New</span>';
+             $shared_files .= '<span class="label success">' . __"New" . '</span>';
          }
          $shared_files .= '</td>
                            <td><em>' . &get_size($size) . '</em></td>
@@ -554,7 +554,6 @@ sub get_size {
         $size = $size / 1000;
         if ($size > 1000) {
             $size = $size / 1000;
-            debug('size: ', $size);
             if ($size > 1000) {
                 $size = $size / 1000;
                 return sprintf("%.2f", $size) . "GB";

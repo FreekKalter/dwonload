@@ -1,0 +1,15 @@
+# Makefile snippet that holds all package-dependent information.
+
+# Add more languages here!  Beware that this is a makefile snippet and
+# you have to adhere to make syntax.
+LINGUAS = en\
+	  nl \
+
+# Textdomain for our package.
+TEXTDOMAIN = dwonload
+
+# Initial copyright holder added to pot and po files.
+COPYRIGHT_HOLDER = Freek Kalter
+
+# Where to send msgid bugs?  
+MSGID_BUGS_ADDRESS = Freek Kalter <freek@kalteronline.org>
