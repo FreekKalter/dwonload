@@ -206,25 +206,13 @@ ajax '/me/friends_upload_form' => sub{
    return $friends;
 };
 
-sub check_auth{
-    my $fb = Facebook::Graph->new(config->{facebook});
-    if (!session('access_token')) {
-      return undef;
-    }
-    else {
-      $fb->access_token(session('access_token'));    #get facebook access token from users session
-      return $fb;
-    }
-};
+
 post '/upload' => sub {
     my $fb = &check_auth();
     if (!$fb) {
         redirect '/';
     }
     else {
-       debug('params', Dumper(params));
-        $fb->access_token(session('access_token'))
-          ;    #get facebook access token from users session
         my $user       = $fb->fetch('me');
         my $file       = request->upload('datafile');
         my $shared_str = '';
@@ -250,20 +238,19 @@ post '/upload' => sub {
             $shared_str, $file->size);
         my $file_id = database->last_insert_id(undef, undef, undef, undef);
 
-        #insert value about new files
         foreach my $user (split(',', $shared_str)) {
+           #insert value about new files
             $sth = database->prepare(
                 'UPDATE users
-             SET new = CONCAT(new, ?)
-             WHERE id=?'
+                SET new = CONCAT(new, ?)
+                WHERE id=?'
             );
             $sth->execute($file_id . ',', &get_database_user_id($user));
             if (params->{'wallpost'}) {
                 my $response =
                   $fb->add_post->to($user)->set_message(params->{'comment'})
-                  ->set_link_uri('http://dwonloader.kalteronline.org/details/' 
-                      . $file_id
-                      . '?details=1')->set_link_caption($file->filename)
+                  ->set_link_uri('http://dwonloader.kalteronline.org/details/' . $file_id . '?details=1')
+                  ->set_link_caption($file->filename)
                   ->publish;
             }
         }
@@ -532,6 +519,17 @@ get '/download_file/:generated_id' => sub {
 any qr{.*} => sub {
     status 'not found';
     template 'special_404', {path => request->path};
+};
+
+sub check_auth{
+    my $fb = Facebook::Graph->new(config->{facebook});
+    if (!session('access_token')) {
+      return undef;
+    }
+    else {
+      $fb->access_token(session('access_token'));    #get facebook access token from users session
+      return $fb;
+    }
 };
 
 sub get_database_user_id {
