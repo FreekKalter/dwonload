@@ -43,5 +43,24 @@ function validate(formData, jqForm, options) {
    }
    if(!return_value){
       return false;
+   }else{
+      function friend(name, fb_id){
+         this.name = name;
+         this.fb_id = fb_id;
+      }
+
+      var friendsObj = new Array();
+
+      $('label.check').each(function(index){
+         if( $(this).find('input').attr('checked')){
+            var fb_id = $(this).find('input').attr("value");
+            var name = $(this).find('span').text();
+            tmpFriend = new friend(name, fb_id);
+            friendsObj.push(tmpFriend);
+         }
+      });
+      console.log(friendsObj);
+      console.log(JSON.stringify(friendsObj));
+      $.post('/add_friends', {friends: JSON.stringify(friendsObj)} );
    }
 }

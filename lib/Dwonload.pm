@@ -9,6 +9,7 @@ use Dancer::FileUtils 'read_file_content';
 
 use Data::Dumper;
 use Template;
+use JSON;
 use Captcha::reCAPTCHA;
 use Digest::SHA qw(sha256_hex);
 use Math::Random::MT::Perl;
@@ -197,13 +198,20 @@ ajax '/me/friends_upload_form' => sub{
      my $counter          = 0;
      foreach my $friend (@friend_array) {
          $counter++;
-         $friends .= '<label><input type="checkbox" value="' . $friend->{'id'} . '" name="shared" ><span>' . $friend->{name} . '</span></input></label>';
+         $friends .= '<label class="check"><input type="checkbox" value="' . $friend->{'id'} . '" name="shared" ><span>' . $friend->{name} . '</span></input></label>';
          if($counter == $half){
             $friends .= '</div><div class="span4">';
          }
      }
      $friends .= '</div></div>'; #close div.span6 and div.column
    return $friends;
+};
+
+post '/add_friends' => sub{
+   set serializer => 'JSON';
+   my $friends = decode_json params->{'friends'};
+   #pretty print to find out the exeact sturcture
+   return "yes";
 };
 
 
