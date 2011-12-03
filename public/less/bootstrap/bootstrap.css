@@ -239,6 +239,9 @@ body {
 .help-inline {
   display: none;
 }
+a.dwonload {
+  margin-left: 2px;
+}
 .bar {
   width: 300px;
 }

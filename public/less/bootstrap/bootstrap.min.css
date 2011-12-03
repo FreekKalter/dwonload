@@ -30,6 +30,7 @@ body{background-attachment:fixed;background-color:#808080;background-repeat:repe
 .details span{color:#808080;font-weight:bold;}
 .input-file{margin-right:100px;}
 .help-inline{display:none;}
+a.dwonload{margin-left:2px;}
 .bar{width:300px;}
 #progress{border:1px solid #404040;margin-top:5px;}
 #progressbar{height:14px;background:#404040;width:0px;}
