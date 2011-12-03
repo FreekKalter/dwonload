@@ -7,7 +7,7 @@ use Dancer::Plugin::Email;
 use Dancer::Logger::Console;
 use Dancer::FileUtils 'read_file_content';
 
-use Data::Dumper;
+use Data::Dumper qw(Dumper);
 use Template;
 use JSON;
 use Captcha::reCAPTCHA;
@@ -75,6 +75,15 @@ get '/facebook/postback/' => sub {
         );
         $sth->execute($user->{first_name}, $user->{email}, $user->{id})
           or die $sth->errstr;
+    }else{
+       if($row->{'status'} == 0) {
+            $sth = database->prepare(
+                'UPDATE users
+                SET email=?, status=1
+                WHERE id=?'
+            );
+            $sth->execute($user->{email}, $user->{'id'});
+         }
     }
     my ($mem, $sql, $key);
     $sql = 'SELECT id FROM users WHERE fb_id=?';
@@ -110,8 +119,8 @@ ajax '/me/files_shared_with_me' => sub{
   #get file_ids that are new since last login
   my $sth = database->prepare(
       'SELECT new
-    FROM users
-    WHERE id=?'
+       FROM users
+       WHERE id=?'
   );
   $sth->execute($database_id) or die $sth->errstr;
   my $new_files_hash = $sth->fetchrow_hashref;
@@ -129,28 +138,34 @@ ajax '/me/files_shared_with_me' => sub{
    #generate list of files shared with me
    my ($mem, $sql, $key);
    my $shared_files = '';
-   $sql = 'SELECT files.*, users.fb_id 
-          FROM files, users
-          WHERE shared REGEXP ? AND files.owner = users.id';
+   $sql = 'SELECT *
+          FROM files
+          WHERE shared REGEXP ?';
    $key = 'SQL:' . $user->{id} . ':' . md5($sql);
    if(defined ($mem = $memd->get($key))){
       $shared_files = $mem;
    }else{
      $sth = database->prepare($sql);
      $sth->execute($user->{'id'}) or die $sth->errstr;
-     $sth->bind_columns( \my ( $id,  $filename,  $description,  $owner,  $shared,  $size, $fb_id));
+     $sth->bind_columns( \my($id,  $filename,  $description,  $owner,  $shared,  $size));
      while ($sth->fetch()) {
-        debug('id: ', $id);
-         my $friend = $fb->fetch($fb_id);
-         $shared_files .= '<tr>
-            <td><a href="/details/' . $id . '?details=1">' . $filename . '</a><a href="/details/' . $id . '"> <em>download</em> </a></td>';
-         if (grep $_ eq $id, split(',', $new_files)) {
-             $shared_files .= '<span class="label success">' . __"New" . '</span>';
+         #get owner's name
+         my $sth2 = database->prepare(
+            'SELECT name
+             FROM users
+             WHERE id=?'
+         );
+         $sth2->execute($owner);
+         my $res = $sth2->fetchrow_hashref;
+         my $friend = $res->{'name'};
+
+         $shared_files .= '<tr> <td><a href="/details/' . $id . '?details=1">' . $filename . '</a><a href="/details/' . $id . '"> <em>download</em> </a>';
+         #add label if its the first time the user sees the file
+         my @files = split(',', $new_files);
+         if (grep $_ eq $id, @files) {
+             $shared_files .= '<span class="label success">New</span>';
          }
-         $shared_files .= '</td>
-                           <td><em>' . &get_size($size) . '</em></td>
-                           <td><em>' . $friend->{'name'} . '</em></td>
-                        </tr>';
+         $shared_files .= '</td> <td><em>' . &get_size($size) . '</em></td> <td><em>' . $friend . '</em></td> </tr>';
      }
      $memd->set($key, $shared_files, 600); 
   }
@@ -211,7 +226,25 @@ post '/add_friends' => sub{
    set serializer => 'JSON';
    my $friends = decode_json params->{'friends'};
    #pretty print to find out the exeact sturcture
-   return "yes";
+   #debug('friends: ', Dumper($friends));
+   
+   foreach my $friend (@$friends){
+        my $sth = database->prepare(
+           'SELECT fb_id
+            FROM users
+            WHERE fb_id = ?'
+        );
+        $sth->execute($friend->{'fb_id'});
+        debug('name: ', $friend->{'name'});
+        if(!defined($sth->fetchrow_hashref)) {#no such user exist yet
+           debug('does not exist');
+           $sth = database->prepare(
+               'INSERT INTO users (name, fb_id, status)
+                VALUES (?, ?, ?)'
+           );
+           $sth->execute($friend->{'name'}, $friend->{'fb_id'}, 0),
+        }
+   }
 };
 
 
