@@ -159,7 +159,7 @@ ajax '/me/files_shared_with_me' => sub{
          my $res = $sth2->fetchrow_hashref;
          my $friend = $res->{'name'};
 
-         $shared_files .= '<tr> <td><a href="/details/' . $id . '?details=1">' . $filename . '</a><a href="/details/' . $id . '"> <em>download</em> </a>';
+         $shared_files .= '<tr> <td><a href="/details/' . $id . '?details=1">' . $filename . '</a> <a href="/details/' . $id . '"><em>download</em></a>';
          #add label if its the first time the user sees the file
          my @files = split(',', $new_files);
          if (grep $_ eq $id, @files) {
