@@ -1,6 +1,7 @@
 $(document).ready(function(){
    $('#upload-form').ajaxForm({beforeSubmit: validate});
 
+   $("#others-inner").load("/me/files_shared_with_me");
    var tabs = new Array();
    tabs["#shared"] = "/me/files_i_shared";
    tabs["#others"] = "/me/files_shared_with_me";
@@ -44,13 +45,16 @@ function validate(formData, jqForm, options) {
    if(!return_value){
       return false;
    }else{
+
+      //send friends names asynchronius from upload
       function friend(name, fb_id){
          this.name = name;
          this.fb_id = fb_id;
       }
 
-      var friendsObj = new Array();
+      var friendsObj = new Array(); //array of friend objects
 
+      //added checked friends to array
       $('label.check').each(function(index){
          if( $(this).find('input').attr('checked')){
             var fb_id = $(this).find('input').attr("value");
@@ -59,8 +63,6 @@ function validate(formData, jqForm, options) {
             friendsObj.push(tmpFriend);
          }
       });
-      console.log(friendsObj);
-      console.log(JSON.stringify(friendsObj));
       $.post('/add_friends', {friends: JSON.stringify(friendsObj)} );
    }
 }

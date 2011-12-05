@@ -46,14 +46,14 @@
                   <fieldset>
                      <!--<legend><strong>Upload a file to share with your friends.</strong></legend>-->
                      <div class="clearfix">
-                        <label for="comment">Comment:</label>
+                        <label for="comment"><% comment %></label>
                         <div class="input" id="comment">
                            <textarea class="xxlarge" rows="3" name="comment" style="width: 304px; height: 60px;"></textarea>
                         </div>
                      </div>
 
                      <div id="datafile-container" class="clearfix">
-                        <label for="datafile">File to share: </label>
+                        <label for="datafile"><% file_to_share %></label>
                         <div id="datafile" class="input" >
                            <input class="input-file" type="file" id="datafile" name="datafile">
                            <span id="datafile-help" class="help-inline">No file selected to upload.</span>
@@ -67,14 +67,14 @@
                      </div>  <!--datafile-container-->
 
                      <div class="clearfix">
-                        <label>Post link on friends wall: </label>
+                        <label> <% post_link %> </label>
                         <div class="input">
                            <input type="checkbox" value="yes" name="wallpost" ></input>
                         </div>
                      </div>
 
                      <div id="friends-container">
-                        <label>Friends to share with:</label>
+                        <label><% friends %></label>
                         <div id="friends" class="input">
                            <ul id="upload-inner" class="inputs-list">
                               <!--get via ajax request -->

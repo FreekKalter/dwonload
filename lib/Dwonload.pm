@@ -580,14 +580,22 @@ any qr{.*} => sub {
 sub get_basic_template_variables{
     
    my $return_value;
+   #menu
    $return_value->{'files_i_shared'} = __"Files I shared";
    $return_value->{'files_shared_with_me'} = __"Files shared with me";
    $return_value->{'upload'} = __"Upload";
 
-
+   #table
    $return_value->{'filename'} = __"Filename";
    $return_value->{'size'} = __"Size";
    $return_value->{'owner'} = __"Owner";
+   
+   #upload form
+   $return_value->{'comment'} = __"Comment:";
+   $return_value->{'file_to_share'} = __"File to share:";
+   $return_value->{'post_link'} = __"Post link on friends wall:";
+   $return_value->{'friends'} = __"Friends to share with:";
+   $return_value->{'subtitle'} = __"A simple filesharing solution for everyone!";
    return $return_value;
 };
 

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Dwonloader 1.0\n"
 "Report-Msgid-Bugs-To: Freek Kalter <freek@kalteronline.org>\n"
-"POT-Creation-Date: 2011-12-05 17:31+0100\n"
+"POT-Creation-Date: 2011-12-05 19:00+0100\n"
 "PO-Revision-Date: 2011-12-05 17:13+0100\n"
 "Last-Translator: Freek Kalter <freek@kalteronline.org>\n"
 "Language-Team: English\n"
@@ -21,28 +21,48 @@ msgstr ""
 msgid "New"
 msgstr "New"
 
-#: ../lib/Dwonload.pm:583
+#: ../lib/Dwonload.pm:584
 msgid "Files I shared"
 msgstr ""
 
-#: ../lib/Dwonload.pm:584
+#: ../lib/Dwonload.pm:585
 msgid "Files shared with me"
 msgstr ""
 
-#: ../lib/Dwonload.pm:585
+#: ../lib/Dwonload.pm:586
 msgid "Upload"
 msgstr ""
 
-#: ../lib/Dwonload.pm:588
+#: ../lib/Dwonload.pm:589
 msgid "Filename"
 msgstr ""
 
-#: ../lib/Dwonload.pm:589
+#: ../lib/Dwonload.pm:590
 msgid "Size"
 msgstr ""
 
-#: ../lib/Dwonload.pm:590
+#: ../lib/Dwonload.pm:591
 msgid "Owner"
+msgstr ""
+
+#: ../lib/Dwonload.pm:594
+msgid "Comment:"
+msgstr ""
+
+#: ../lib/Dwonload.pm:595
+msgid "File to share:"
+msgstr ""
+
+#: ../lib/Dwonload.pm:596
+msgid "Post link on friends wall:"
+msgstr ""
+
+#: ../lib/Dwonload.pm:597
+msgid "Friends to share with:"
+msgstr ""
+
+#: ../lib/Dwonload.pm:598
+msgid "A simple filesharing solution for everyone!"
 msgstr ""
 
 #~ msgid "Hello dudes!"
