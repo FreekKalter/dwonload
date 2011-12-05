@@ -9,8 +9,10 @@ $(document).ready(function(){
 
    $('.tabs').bind('change', function (e) {
       var regex =/#\w*/gi;
-      var div =   e.target.href.match(regex);
+      var div =  e.target.href.match(regex);
       $(div + '-inner').load(tabs[div]);
+      var stateObj = { foo: "bar" };
+      history.replaceState(stateObj, div, "/me/" + div.toString().substring(1));
    });
 
 });

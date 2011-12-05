@@ -1,7 +1,7 @@
 <ul id="main-tabs" class="tabs" data-tabs="tabs">
-   <li class="active"><a href="#others"><% files_shared_with_me %></a></li>
-   <li><a href="#shared"><% files_i_shared %> </a></li>
-   <li><a href="#upload"><% upload %></a></li>
+   <li <% IF tab == 'others' %> class="active" <% END %>><a href="#others"><% files_shared_with_me %></a></li>
+   <li <% IF tab == 'shared' %> class="active" <% END %>><a href="#shared"><% files_i_shared %> </a></li>
+   <li <% IF tab == 'upload' %> class="active" <% END %>><a href="#upload"><% upload %></a></li>
 </ul>
       
 <div class="test" id="test">
@@ -9,7 +9,7 @@
 
 <div class="tab-content">
 
-   <div id="others" class="active">
+   <div id="others" <% IF tab == 'others' %> class="active" <% END %>>
       <table class="zebra-striped">
          <thead>
             <tr>
@@ -24,7 +24,7 @@
       </table>
    </div>
 
-   <div id="shared">
+   <div id="shared" <% IF tab == 'shared' %> class="active" <% END %>>
       <table class="zebra-striped">
          <thead>
             <tr>
@@ -38,7 +38,7 @@
       </table>
    </div>
 
-   <div id="upload">
+   <div id="upload" <% IF tab == 'upload' %> class="active" <% END %>>
       <div class="centerblock">
          <form id="upload-form" enctype="multipart/form-data" action="/upload" method="post" onsubmit="openProgressBar(); return true;">
             <div class="row">
