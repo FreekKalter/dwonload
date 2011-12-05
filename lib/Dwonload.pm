@@ -103,13 +103,16 @@ get '/facebook/postback/' => sub {
     redirect '/me';
 };
 
-get '/me' => sub {
+get '/me/:tab' => sub {
    my $fb = &check_auth();
    if(!$fb){
       redirect '/about';
    }
-  template 'me', &get_basic_template_variables ;
+   my $template_options = &get_basic_template_variables; 
+   $template_options->{'tab'}  = params->{'tab'};
+   template 'me', $template_options ;
 };
+
 
 ajax '/me/files_shared_with_me' => sub{
    my $fb = &check_auth();
