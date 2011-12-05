@@ -9,7 +9,7 @@ use Dancer::FileUtils 'read_file_content';
 
 use Data::Dumper qw(Dumper);
 use Template;
-use JSON;
+use JSON qw(decode_json);
 use Captcha::reCAPTCHA;
 use Digest::SHA qw(sha256_hex);
 use Math::Random::MT::Perl;
@@ -17,7 +17,10 @@ use DateTime::Format::MySQL;
 use DateTime::Format::Epoch;
 use Cache::Memcached::Fast;
 use Digest::MD5 qw(md5 md5_hex md5_base64);
-use Locale::TextDomain qw(dwonloader);
+
+use POSIX qw (locale_h);
+use Locale::Messages qw (LC_MESSAGES);
+use Locale::TextDomain qw(dwonload);
 
 our $VERSION = '0.1';
 my $memd = new Cache::Memcached::Fast({
@@ -64,7 +67,7 @@ get '/facebook/postback/' => sub {
 
     #check if user exists in user database, if not add him
 
-    my $sth = database->prepare('SELECT fb_id FROM users WHERE fb_id=?');
+    my $sth = database->prepare('SELECT fb_id,status FROM users WHERE fb_id=?');
     $sth->execute($user->{id}) or die $sth->errstr;
     my $row = $sth->fetchrow_hashref;
     if (!$row)    #user does not existst
@@ -76,7 +79,7 @@ get '/facebook/postback/' => sub {
         $sth->execute($user->{first_name}, $user->{email}, $user->{id})
           or die $sth->errstr;
     }else{
-       if($row->{'status'} == 0) {
+       if($row->{'status'} eq '0') {
             $sth = database->prepare(
                 'UPDATE users
                 SET email=?, status=1
@@ -105,7 +108,7 @@ get '/me' => sub {
    if(!$fb){
       redirect '/about';
    }
-  template 'me';
+  template 'me', &get_basic_template_variables ;
 };
 
 ajax '/me/files_shared_with_me' => sub{
@@ -159,11 +162,11 @@ ajax '/me/files_shared_with_me' => sub{
          my $res = $sth2->fetchrow_hashref;
          my $friend = $res->{'name'};
 
-         $shared_files .= '<tr> <td><a href="/details/' . $id . '?details=1">' . $filename . '</a><a class="download" href="/details/' . $id . '"><em>download</em></a>';
+         $shared_files .= '<tr> <td><a href="/details/' . $id . '?details=1">' . $filename . '</a> <a class="download" href="/details/' . $id . '">download</a>';
          #add label if its the first time the user sees the file
          my @files = split(',', $new_files);
          if (grep $_ eq $id, @files) {
-             $shared_files .= '<span class="label success">New</span>';
+             $shared_files .= '<span class="label success">'. __("New") . '</span>';
          }
          $shared_files .= '</td> <td><em>' . &get_size($size) . '</em></td> <td><em>' . $friend . '</em></td> </tr>';
      }
@@ -192,7 +195,7 @@ ajax '/me/files_i_shared' => sub{
    my $file_list = '';
    while ($sth->fetch()) {
       $file_list .= '<tr>
-      <td><a href="/details/' . $id . '?details=1">' . $filename . '</a><a class="download" href="/details/' . $id .'"><em>download</em> </a></td>
+      <td><a href="/details/' . $id . '?details=1">' . $filename . '</a> <a class="download" href="/details/' . $id .'">download </a></td>
                   <td>' . &get_size($size) . '</td>
                   </tr>';
    } 
@@ -557,9 +560,35 @@ get '/download_file/:generated_id' => sub {
     }
 };
 
+any '/setlang' => sub {
+   if(params->{'lang'} eq 'nl'){
+      session lang => 'nl';
+   }
+   if(params->{'lang'} eq 'en'){
+      session lang => 'en';
+   }
+   $ENV{LANGUAGE} = session('lang');
+   debug(setlocale (LC_MESSAGES, "")) or die "Pardon $!";
+   redirect '/me';
+};
+
 any qr{.*} => sub {
     status 'not found';
     template 'special_404', {path => request->path};
+};
+
+sub get_basic_template_variables{
+    
+   my $return_value;
+   $return_value->{'files_i_shared'} = __"Files I shared";
+   $return_value->{'files_shared_with_me'} = __"Files shared with me";
+   $return_value->{'upload'} = __"Upload";
+
+
+   $return_value->{'filename'} = __"Filename";
+   $return_value->{'size'} = __"Size";
+   $return_value->{'owner'} = __"Owner";
+   return $return_value;
 };
 
 sub check_auth{
@@ -569,6 +598,13 @@ sub check_auth{
     }
     else {
       $fb->access_token(session('access_token'));    #get facebook access token from users session
+
+      #get preferred language form session
+      if(!session('lang')){
+         session lang => "nl";
+      }
+      $ENV{LANGUAGE} = session('lang');
+      setlocale (LC_MESSAGES, "");
       return $fb;
     }
 };

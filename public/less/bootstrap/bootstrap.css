@@ -213,6 +213,12 @@ body {
   margin: 5px;
   padding: 5px;
 }
+img.lang {
+  height: 10px;
+  float: right;
+  margin: 3px;
+  border: 1px solid #404040;
+}
 #footer {
   color: #e6e6e6;
   text-align: center;
@@ -239,8 +245,8 @@ body {
 .help-inline {
   display: none;
 }
-a.dwonload {
-  margin-left: 2px;
+a.download {
+  font-style: italic;
 }
 .bar {
   width: 300px;

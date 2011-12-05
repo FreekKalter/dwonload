@@ -1,7 +1,7 @@
 <ul id="main-tabs" class="tabs" data-tabs="tabs">
-   <li class="active"><a href="#others">Files shared with me</a></li>
-   <li><a href="#shared">Files shared</a></li>
-   <li><a href="#upload">Upload</a></li>
+   <li class="active"><a href="#others"><% files_shared_with_me %></a></li>
+   <li><a href="#shared"><% files_i_shared %> </a></li>
+   <li><a href="#upload"><% upload %></a></li>
 </ul>
       
 <div class="test" id="test">
@@ -13,9 +13,9 @@
       <table class="zebra-striped">
          <thead>
             <tr>
-               <th>Filename</th>
-               <th>Size</th>
-               <th>Owner</th>
+               <th><% filename %></th>
+               <th><% size %></th>
+               <th><% owner %></th>
             </tr>
          </thead>
          <tbody id="others-inner">
@@ -28,8 +28,8 @@
       <table class="zebra-striped">
          <thead>
             <tr>
-               <th>Filename</th>
-               <th>Size</th>
+               <th><% filename %></th>
+               <th><% size %> </th>
             </tr>
          </thead>
          <tbody id="shared-inner">

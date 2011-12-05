@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Dwonloader 1.0\n"
 "Report-Msgid-Bugs-To: Freek Kalter <freek@kalteronline.org>\n"
-"POT-Creation-Date: 2011-11-30 19:34+0100\n"
-"PO-Revision-Date: 2011-11-30 20:11+0100\n"
+"POT-Creation-Date: 2011-12-05 17:31+0100\n"
+"PO-Revision-Date: 2011-12-05 17:33+0100\n"
 "Last-Translator: Freek Kalter <freek@kalteronline.org>\n"
 "Language-Team: English\n"
 "Language: en_US\n"
@@ -17,7 +17,36 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../lib/Dwonload.pm:148
-msgid "New</span>"
-msgstr "Nieuw</span>"
+#: ../lib/Dwonload.pm:169
+msgid "New"
+msgstr "Nieuw"
 
+#: ../lib/Dwonload.pm:583
+msgid "Files I shared"
+msgstr "Bestanden die ik heb gedeeld"
+
+#: ../lib/Dwonload.pm:584
+msgid "Files shared with me"
+msgstr "Bestanden die met mij zijn gedeeld"
+
+#: ../lib/Dwonload.pm:585
+msgid "Upload"
+msgstr "Upload"
+
+#: ../lib/Dwonload.pm:588
+msgid "Filename"
+msgstr "Bestandsnaam"
+
+#: ../lib/Dwonload.pm:589
+msgid "Size"
+msgstr "Grootte"
+
+#: ../lib/Dwonload.pm:590
+msgid "Owner"
+msgstr "Eigenaar"
+
+#~ msgid "Hello dudes!"
+#~ msgstr "Hallo mensen!"
+
+#~ msgid "New</span>"
+#~ msgstr "Nieuw</span>"

@@ -24,9 +24,11 @@
 <body>
    <div class="container">
       <div id="header">
-         <% username %><a href="/logout">Log out </a>
          <a href="/"><h1>Dwonloader</h1></a>
          <h2>A simple filesharing solution for everyone!</h2>
+         <a href="/logout">Log out </a> 
+          <a href="/setlang?lang=nl"><img class="lang" src="<% request.uri_base %>/images/nl.png" /></a>
+          <a href="/setlang?lang=en"><img class="lang" src="<% request.uri_base %>/images/en.png" /></a>
       </div><!--header -->
       <% content %>
       <div id="footer">
