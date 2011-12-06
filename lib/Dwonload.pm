@@ -581,7 +581,7 @@ any '/setlang' => sub {
       session lang => 'en';
    }
    $ENV{LANGUAGE} = session('lang');
-   debug(setlocale (LC_MESSAGES, "")) or die "Pardon $!";
+   setlocale (LC_MESSAGES, "");
    redirect '/me';
 };
 
