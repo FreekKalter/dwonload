@@ -48,8 +48,7 @@ get '/logout' => sub {
 
 get '/login' => sub {    #eenmaal geauthiriseerd, vliegt door deze en postback heen
     my $fb = Facebook::Graph->new(config->{'facebook'});
-    redirect $fb ->authorize->extend_permissions(
-        qw(email offline_access publish_stream create_event rsvp_event))
+    redirect $fb ->authorize->extend_permissions( qw(email offline_access publish_stream ))
       ->uri_as_string;
   };
 
@@ -225,7 +224,7 @@ ajax '/me/friends_upload_form' => sub{
      my $friends_hash     = $friends_response->as_hashref->{data};
      my @friend_array     = @$friends_hash;
      my $friends          = '<div class="row"><div class="span4">';
-     my $half             = sprintf("%d", scalar(@friend_array) / 2);
+     my $half             = int(scalar(@friend_array)/2 + 0.5);
      my $counter          = 0;
      foreach my $friend (@friend_array) {
          $counter++;
@@ -463,8 +462,11 @@ get '/details/:id/edit' => sub {
             my $friends_response = $fb->query->find('me/friends')->request;
             my $friends_hash     = $friends_response->as_hashref->{data};
             my @friend_array     = @$friends_hash;
-            my $friends          = '';
+            my $friends          = '<div class="row"><div class="span4">';
+            my $half             = int(scalar(@friend_array)/2 + 0.5);
+            my $counter = 0;
             foreach my $friend (@friend_array) {
+               $counter++;
                 if (grep $_ eq $friend->{'id'}, @already_shared) {
                     $friends .= '<label><input type="checkbox" value="' . $friend->{'id'} . '" name="shared" checked="yes">
                                  <span>' . $friend->{name} . '</span></input></label>';
@@ -473,7 +475,11 @@ get '/details/:id/edit' => sub {
                     $friends .= '<label><input type="checkbox" value="' . $friend->{'id'} . '" name="shared" ><span>'
                                . $friend->{name} . '</span></input></label>';
                 }
+                if($counter == $half){
+                   $friends .= '</div><div class="span4">';
+                }
             }
+            $friends .= '</div></div>';
             template 'details_form',
               { action  => '/details/' . $id . '/edit',
                 comment => $row->{'description'},

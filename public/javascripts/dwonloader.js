@@ -1,17 +1,26 @@
 $(document).ready(function(){
    $('#upload-form').ajaxForm({beforeSubmit: validate});
 
-   $("#others-inner").load("/me/files_shared_with_me");
    var tabs = new Array();
    tabs["#shared"] = "/me/files_i_shared";
    tabs["#others"] = "/me/files_shared_with_me";
    tabs["#upload"] = "/me/friends_upload_form"; 
 
+   var tab = window.location.href.match(/(\w*)$/)[0];
+   console.log(tab);
+   $("#" + tab + '-inner').load(tabs["#" + tab]);
+
+   window.onpopstate = function(event){
+      //$(event.state.tab[0] + '-inner').load(tabs[event.state.tab[0]]);
+      window.location = document.location.href;
+   }
+
    $('.tabs').bind('change', function (e) {
       var regex =/#\w*/gi;
       var div =  e.target.href.match(regex);
       $(div + '-inner').load(tabs[div]);
-      var stateObj = { foo: "bar" };
+      var stateObj = { tab: div };
+      history.pushState(stateObj, div, "/me/" + div.toString().substring(1));
       history.replaceState(stateObj, div, "/me/" + div.toString().substring(1));
    });
 

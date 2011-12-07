@@ -1,27 +1,31 @@
 <div id="upload">
    <div class="centerblock">
       <form id="edit-form" action= <% action %> method="post"  >
-         <fieldset>
-            <!--<legend><strong>Upload a file to share with your friends.</strong></legend>-->
-            <div class="clearfix">
-               <label for="comment">Comment</label>
-               <div class="input">
-                  <textarea class="xxlarge" rows="3" name="comment" style="width: 304px; height: 60px;">
-                     <% comment %>
-                  </textarea>
-               </div>
-            </div>
+         <div class="row">
+            <div class="span12">
+               <fieldset>
+                  <!--<legend><strong>Upload a file to share with your friends.</strong></legend>-->
+                  <div class="clearfix">
+                     <label for="comment">Comment</label>
+                     <div class="input">
+                        <textarea class="xxlarge" rows="3" name="comment" style="width: 304px; height: 60px;">
+                           <% comment %>
+                        </textarea>
+                     </div>
+                  </div>
 
-            <div class="clearfix">
-               <label>Friends to share with</label>
-               <div class="input">
-                  <ul class="inputs-list">
-                     <% friends %>
-                  </ul>
-               </div>
-            </div>
-            <input type="submit" value="Save" />
-         </fieldset>
+                  <div class="clearfix">
+                     <label>Friends to share with</label>
+                     <div class="input">
+                        <ul class="inputs-list">
+                           <% friends %>
+                        </ul>
+                     </div>
+                  </div>
+                  <input type="submit" value="Save" />
+               </fieldset>
+            </div><!-- level1 column --> 
+         </div><!-- row -->
       </form>
    </div><!--centerblock-->
 </div> <!--upload-->
