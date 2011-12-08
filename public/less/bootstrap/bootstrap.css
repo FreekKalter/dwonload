@@ -248,10 +248,14 @@ img.lang {
 a.download {
   font-style: italic;
 }
+label.no-padding {
+  padding-top: 0px;
+}
 .bar {
   width: 300px;
 }
 #progress {
+  display: none;
   border: 1px solid #404040;
   margin-top: 5px;
 }

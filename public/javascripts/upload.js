@@ -9,6 +9,7 @@ function openProgressBar() {
  /* patch the form-action tag to include the progress-id */
  document.getElementById("upload-form").action="/upload?X-Progress-ID=" + uuid;
 
+ $('#progress').slideDown('slow');
  /* call the progress-updater every 1000ms */
  interval = window.setInterval(
    function () {

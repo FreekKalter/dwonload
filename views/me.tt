@@ -67,13 +67,13 @@
                      </div>  <!--datafile-container-->
 
                      <div class="clearfix">
-                        <label> <% post_link %> </label>
+                        <label class="no-padding"> <% post_link %> </label>
                         <div class="input">
                            <input type="checkbox" value="yes" name="wallpost" ></input>
                         </div>
                      </div>
 
-                     <div id="friends-container">
+                     <div id="friends-container" class="clearfix">
                         <label><% friends %></label>
                         <div id="friends" class="input">
                            <ul id="upload-inner" class="inputs-list">
@@ -82,7 +82,16 @@
                            <span id="friends-help" class="help-inline">Select at least 1 friend</span>
                         </div>
                      </div>
-                     <input type="submit" value="Upload" />
+
+                     <div id="checkall-container" class="clearfix">
+                        <label for="checkall" class="no-padding">Check all:</label>
+                        <div id="checkall" class="input">
+                           <input type="checkbox" name="checkallBox" id="checkallBox" onclick="jqCheckAll( this.id, 'upload-inner' )"/>
+                        </div>
+                     </div>
+                     <div>
+                        <input type="submit" value="Upload" />
+                     </div>
                   </fieldset>
                </div><!-- level1 column --> 
             </div><!-- row -->

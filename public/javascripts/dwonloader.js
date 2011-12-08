@@ -26,6 +26,11 @@ $(document).ready(function(){
 
 });
 
+function jqCheckAll( id, pID ) {
+ console.log(id);
+   console.log($('#' + id).is('checked'));
+    $( "#" + pID + " :checkbox").attr('checked', $('#' + id).is(':checked'));
+}
 
 function validate(formData, jqForm, options) { 
    var form = jqForm[0];

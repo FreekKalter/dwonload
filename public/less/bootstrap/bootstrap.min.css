@@ -32,8 +32,9 @@ img.lang{height:10px;float:right;margin:3px;border:1px solid #404040;}
 .input-file{margin-right:100px;}
 .help-inline{display:none;}
 a.download{font-style:italic;}
+label.no-padding{padding-top:0px;}
 .bar{width:300px;}
-#progress{border:1px solid #404040;margin-top:5px;}
+#progress{display:none;border:1px solid #404040;margin-top:5px;}
 #progressbar{height:14px;background:#404040;width:0px;}
 .container{width:940px;margin-left:auto;margin-right:auto;zoom:1;min-height:1000px;}.container:before,.container:after{display:table;content:"";zoom:1;*display:inline;}
 .container:after{clear:both;}
