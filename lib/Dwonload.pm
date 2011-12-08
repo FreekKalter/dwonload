@@ -242,9 +242,6 @@ ajax '/me/friends_upload_form' => sub{
 post '/add_friends' => sub{
    set serializer => 'JSON';
    my $friends = decode_json params->{'friends'};
-   #pretty print to find out the exeact sturcture
-   #debug('friends: ', Dumper($friends));
-   
    foreach my $friend (@$friends){
         my $sth = database->prepare(
            'SELECT fb_id
@@ -252,9 +249,7 @@ post '/add_friends' => sub{
             WHERE fb_id = ?'
         );
         $sth->execute($friend->{'fb_id'});
-        debug('name: ', $friend->{'name'});
         if(!defined($sth->fetchrow_hashref)) {#no such user exist yet
-           debug('does not exist');
            $sth = database->prepare(
                'INSERT INTO users (name, fb_id, status)
                 VALUES (?, ?, ?)'
@@ -326,91 +321,74 @@ get '/details/:id' => sub {
        my $sth = database->prepare('SELECT * FROM files WHERE id = ?',);
        $sth->execute($id);
        my $file= $sth->fetchrow_hashref;
-       if (!session('name')) {
+        if (params->{'details'}) {
+            my $owner = undef;
+            if ($file->{'owner'} eq session('user_id')) {
+                $owner = "Yes";
+            }
+            my $shared = '';
+            foreach my $friend (split(',', $file->{'shared'})) {
+                $sth = database->prepare(
+                    'SELECT name
+                      FROM users
+                      WHERE fb_id=?'
+                );
+                $sth->execute($friend);
+                my $row = $sth->fetchrow_hashref;
+                $shared .= $row->{'name'} . ', ';
+            }
+            chop($shared);
+            chop($shared);
 
-           #recaptcha
-           my $c = Captcha::reCAPTCHA->new;
-           template 'details', {
-               id          => $id,
-               description => $file->{'description'},
-               recaptcha   => $c->get_html(
-                   config->{'recaptcha'}->{'public-key'})    #public recapthca key
-           };
-       }
-       else {    #a session has ben made
-           if (params->{'details'}) {
-               my $owner = undef;
-               if ($file->{'owner'} eq session('user_id')) {
-                   $owner = "Yes";
-               }
-               my $shared = '';
-               foreach my $friend (split(',', $file->{'shared'})) {
-                  my $fb_friend =$fb->fetch($friend);
-                  $shared .= $fb_friend->{'name'} . ", ";
+            template 'details',
+              { id            => $id,
+                description   => $file->{'description'},
+                size          => &get_size($file->{'size'}),
+                download_link => "<a href="
+                  . &generate_temp($id)
+                  . ">Download</a>",
+                friends => $shared,
+                owner   => $owner
+              };
+        }# if(params->{'details'})
+        else {
+            if (!params->{'action'}) { #just download
+                redirect &generate_temp($id);
+            }
+            else {
+                #check if users is owner of the file
+                $sth = database->prepare(
+                     'SELECT owner
+                      FROM files
+                      WHERE id=?'
+                );
+                $sth->execute($id);
+                my $row = $sth->fetchrow_hashref;
+                if ($row->{'owner'} eq session('user_id')) {
+                    if (params->{'action'} eq 'delete') {
+                        if (database->quick_delete('files', {id => $id})) {
+                            template 'details',
+                              {error => 'y', description => 'File deleted'};
+                        }
+                        else {
+                            template 'details',
+                              { error       => 'y',
+                                description => 'Something went wrong'
+                              };
+                        }
 
-   #                $sth = database->prepare(
-   #                    'SELECT name
-   #                      FROM users
-   #                      WHERE fb_id=?'
-   #                );
-   #                $sth->execute($friend);
-   #                my $row = $sth->fetchrow_hashref;
-   #                $shared .= $row->{'name'};
-               }
-               chop($shared);
-               chop($shared);
-
-               template 'details',
-                 { id            => $id,
-                   description   => $file->{'description'},
-                   size          => &get_size($file->{'size'}),
-                   download_link => "<a href="
-                     . &generate_temp($id)
-                     . ">Download</a>",
-                   friends => $shared,
-                   owner   => $owner
-                 };
-           }
-           else {
-               if (!params->{'action'}) {
-                   redirect &generate_temp($id);
-               }
-               else {
-
-                   #check if users is owner of the file
-                   $sth = database->prepare(
-                       'SELECT owner
-                FROM files
-                WHERE id=?'
-                   );
-                   $sth->execute($id);
-                   my $row = $sth->fetchrow_hashref;
-                   if ($row->{'owner'} eq session('user_id')) {
-                       if (params->{'action'} eq 'delete') {
-                           if (database->quick_delete('files', {id => $id})) {
-                               template 'details',
-                                 {error => 'y', description => 'File deleted'};
-                           }
-                           else {
-                               template 'details',
-                                 { error       => 'y',
-                                   description => 'Something went wrong'
-                                 };
-                           }
-
-                           #delete acutal file
-                       }
-                   }
-                   else {
-                       template 'details',
-                         { error       => 'y',
-                           description => 'You are not the owner of the file'
-                         };
-                   }
-               }
-           }
-       }
-    }
+                        #TODO:delete acutal file
+                    }
+                }
+                else {
+                    template 'details',
+                      { error       => 'y',
+                        description => 'You are not the owner of the file'
+                      };
+                }#owner of file check
+            }#action check
+        }#not details 
+     }
 };
 
 get '/details/:id/edit' => sub {
@@ -495,7 +473,6 @@ get '/details/:id/edit' => sub {
 post '/details/:id/edit' => sub {
 
     #check if user is owner of file (again) TRUST NOBODY!
-    debug('in edit post');
     my $comment = params->{'comment'};
     chomp($comment);
     my $id = params->{'id'};
@@ -542,7 +519,6 @@ post '/details' => sub {
 
 get '/download_file/:generated_id' => sub {
     my $gen_id = params->{generated_id};
-    debug('id: ', $gen_id);
     my $sth =
       database->prepare('SELECT * FROM downloads WHERE download_id = ?',);
     $sth->execute($gen_id);
@@ -670,7 +646,6 @@ sub get_size {
 }
 
 sub generate_temp {
-
     #generate random string
     my $id                 = shift;
     my $gen                = Math::Random::MT::Perl->new();
