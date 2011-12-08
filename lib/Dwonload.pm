@@ -114,13 +114,15 @@ get '/me/:tab' => sub {
 };
 
 get '/me' => sub {
-   my $fb = &check_auth();
-   if(!$fb){
-      redirect '/about';
-   }
-   my $template_options = &get_basic_template_variables; 
-   $template_options->{'tab'} = 'others';
-   template 'me', $template_options ;
+   redirect '/me/others';
+
+   #my $fb = &check_auth();
+   #if(!$fb){
+   #   redirect '/about';
+   #}
+   #my $template_options = &get_basic_template_variables; 
+   #$template_options->{'tab'} = 'others';
+   #template 'me', $template_options ;
 };
 
 ajax '/me/files_shared_with_me' => sub{
@@ -266,7 +268,7 @@ post '/add_friends' => sub{
 post '/upload' => sub {
     my $fb = &check_auth();
     if (!$fb) {
-        redirect '/';
+        redirect '/about';
     }
     else {
         my $user       = $fb->fetch('me');
@@ -311,7 +313,7 @@ post '/upload' => sub {
             }
         }
     }
-    #redirect '/me';
+    redirect '/me/shared';
 };
 
 get '/details/:id' => sub {

@@ -39,7 +39,9 @@ function fetch(uuid) {
     }
     /* we are done, stop the interval */
     if (upload.state == 'done') {
-     window.clearTimeout(interval);
+       bar.style.width = bar_width;
+        window.clearTimeout(interval);
+        setTimeout("window.location.href = '/me/shared'", 2000);
     }
    }
   }
