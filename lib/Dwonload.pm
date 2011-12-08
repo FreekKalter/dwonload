@@ -135,36 +135,35 @@ ajax '/me/files_shared_with_me' => sub{
     my $database_id = &get_database_user_id($user->{'id'});
   #get file_ids that are new since last login
   my $sth = database->prepare(
-      'SELECT new
-       FROM users
-       WHERE id=?'
+      'SELECT file_id
+       FROM new
+       WHERE user_id=?'
   );
-  $sth->execute($database_id) or die $sth->errstr;
-  my $new_files_hash = $sth->fetchrow_hashref;
-  my $new_files      = $new_files_hash->{'new'};
+  $sth->execute($database_id) or debug $sth->errstr;
+  $sth->bind_columns( \my($file_id));
+
+  my @files;
+  while($sth->fetch){
+   push(@files, $file_id);
+  }
 
   #empty the new field, cause the user has seen them now
-  $sth = database->prepare(
-      'UPDATE users
-       SET new=""
-       WHERE id=?'
-  );
-  $sth->execute($database_id) or die $sth->errstr;
- 
+  database->quick_delete('new', {user_id => $database_id});
 
    #generate list of files shared with me
    my ($mem, $sql, $key);
    my $shared_files = '';
-   $sql = 'SELECT *
-          FROM files
-          WHERE shared REGEXP ?';
+   $sql = 'SELECT files.*
+          FROM files, shares
+          WHERE shares.user_id = ? 
+          AND shares.file_id == files.id';
    $key = 'SQL:' . $user->{id} . ':' . md5($sql);
    if(defined ($mem = $memd->get($key))){
       $shared_files = $mem;
    }else{
      $sth = database->prepare($sql);
-     $sth->execute($user->{'id'}) or die $sth->errstr;
-     $sth->bind_columns( \my($id,  $filename,  $description,  $owner,  $shared,  $size));
+     $sth->execute($database_id) or die $sth->errstr;
+     $sth->bind_columns( \my($id,  $filename,  $description,  $owner, $size));
      while ($sth->fetch()) {
          #get owner's name
          my $sth2 = database->prepare(
@@ -174,15 +173,14 @@ ajax '/me/files_shared_with_me' => sub{
          );
          $sth2->execute($owner);
          my $res = $sth2->fetchrow_hashref;
-         my $friend = $res->{'name'};
+         my $owner = $res->{'name'};
 
          $shared_files .= '<tr> <td><a href="/details/' . $id . '?details=1">' . $filename . '</a> <a class="download" href="/details/' . $id . '">download</a>';
          #add label if its the first time the user sees the file
-         my @files = split(',', $new_files);
          if (grep $_ eq $id, @files) {
              $shared_files .= '<span class="label success">'. __("New") . '</span>';
          }
-         $shared_files .= '</td> <td><em>' . &get_size($size) . '</em></td> <td><em>' . $friend . '</em></td> </tr>';
+         $shared_files .= '</td> <td><em>' . &get_size($size) . '</em></td> <td><em>' . $owner . '</em></td> </tr>';
      }
      $memd->set($key, $shared_files, 600); 
   }
@@ -197,14 +195,14 @@ ajax '/me/files_i_shared' => sub{
    
     my $response = $fb->query->find('me')->request;
     my $user     = $response->as_hashref;
+    my $database_id = &get_database_user_id($user->{'id'});
    #generate list of uploaded files
    my $sth = database->prepare(
-      'SELECT files.id, files.filename, files.description, files.owner, files.size
-       FROM files, users
-       WHERE files.owner = users.id
-       AND users.fb_id=?',
+      'SELECT *
+       FROM files
+       WHERE owner = ?'
    );
-   $sth->execute($user->{id});
+   $sth->execute($database_id);
    $sth->bind_columns(\my ($id, $filename, $description, $owner, $size));
    my $file_list = '';
    while ($sth->fetch()) {
@@ -284,21 +282,29 @@ post '/upload' => sub {
 
         #insert file info into database
         my $sth = database->prepare(
-            'INSERT INTO files (filename, description, owner, shared, size)
-          VALUES (?, ?, ?, ?, ?)'
+            'INSERT INTO files (filename, description, owner, size)
+             VALUES (?, ?, ?, ?)'
         );
-        $sth->execute($file->filename, params->{'comment'}, session('user_id'),
-            $shared_str, $file->size);
+        $sth->execute($file->filename, params->{'comment'}, session('user_id'), $file->size);
         my $file_id = database->last_insert_id(undef, undef, undef, undef);
 
         foreach my $user (split(',', $shared_str)) {
-           #insert value about new files
-            $sth = database->prepare(
-                'UPDATE users
-                SET new = CONCAT(new, ?)
-                WHERE id=?'
-            );
-            $sth->execute($file_id . ',', &get_database_user_id($user));
+             my $db_user_id = &get_database_user_id($user);
+
+           #insert shares into db
+           $sth = database->prepare(
+              'INSERT INTO shares (file_id, user_id)
+               VALUES (?, ?)'
+           );
+           $sth->execute($file_id, $db_user_id) or debug($sth->errstr);
+
+           #insert values about new files
+           $sth = database->prepare(
+              'INSERT INTO new (file_id, user_id)
+               VALUES (?, ?)'
+           );
+           $sth->execute($file_id, $db_user_id) or debug($sth->errstr);
+
             if (params->{'wallpost'}) {
                 my $response =
                   $fb->add_post->to($user)->set_message(params->{'comment'})
@@ -318,7 +324,11 @@ get '/details/:id' => sub {
     }
     else {
        my $id  = params->{id};
-       my $sth = database->prepare('SELECT * FROM files WHERE id = ?',);
+       my $sth = database->prepare('
+          SELECT * 
+          FROM files 
+          WHERE id = ?'
+       );
        $sth->execute($id);
        my $file= $sth->fetchrow_hashref;
         if (params->{'details'}) {
@@ -326,15 +336,23 @@ get '/details/:id' => sub {
             if ($file->{'owner'} eq session('user_id')) {
                 $owner = "Yes";
             }
-            my $shared = '';
-            foreach my $friend (split(',', $file->{'shared'})) {
-                $sth = database->prepare(
-                    'SELECT name
+            #get get user who you shared this file with
+            $sth = database->prepare(
+               'SELECT user_id
+                FROM shares
+                WHERE file_id = ?'
+             );
+            $sth->execute($id);
+            $sth->bind_columns( \my($user_id));
+            my $shared = '';  
+            while($sth->fetch()){
+                my $sth2 = database->prepare('
+                    SELECT name
                       FROM users
-                      WHERE fb_id=?'
+                      WHERE id = ?'
                 );
-                $sth->execute($friend);
-                my $row = $sth->fetchrow_hashref;
+                $sth2->execute($user_id);
+                my $row = $sth2->fetchrow_hashref;
                 $shared .= $row->{'name'} . ', ';
             }
             chop($shared);
@@ -415,11 +433,11 @@ get '/details/:id/edit' => sub {
         }
         else {
 
-            #get already checked friends
+            #get description
             $sth = database->prepare(
-                'SELECT shared, description
-             FROM files
-             WHERE id=?'
+                'SELECT description
+                FROM files
+                WHERE id=?'
             );
             $sth->execute($id);
             $row = $sth->fetchrow_hashref;
@@ -432,10 +450,20 @@ get '/details/:id/edit' => sub {
                       {error => 'y', description => 'no such file'};
                 }
             }
-            my @already_shared = split(',', $row->{'shared'});
-
-            $fb->access_token(session('access_token'))
-              ;    #get facebook access token from users session
+            # get already checked friends 
+            $sth = database->prepare('
+               SELECT users.fb_id
+               FROM shares, users
+               WHERE shares.file_id = ?
+               AND users.id = shares.user_id'
+            );
+            $sth->execute($id);
+            $sth->bind_columns(\my($user_id));
+            my @already_shared; 
+            while($sth->fetch){
+               push(@already_shared, $user_id);
+            }
+            $fb->access_token(session('access_token'));    #get facebook access token from users session
             my $user = $fb->fetch('me');
 
             #generate list of friends to share files with
@@ -487,10 +515,26 @@ post '/details/:id/edit' => sub {
     }
     my $sth = database->prepare(
         'UPDATE files
-       SET description=?, shared=?
+       SET description=?
        WHERE id=?'
     );
-    $sth->execute($comment, $shared, $id);
+    $sth->execute($comment, $id);
+
+    foreach my $friend (split(',', $shared)){
+       #insert new shares
+       $sth = database->prepare('
+          INSERT INTO shares (user_id, file_id)
+          VALUES (?, ?)'
+       );
+       $sth->execute($id, &get_database_user_id($friend));
+       
+       #insert new 'new' notifications
+       $sth = database->prepare('
+          INSERT INTO new (user_id, file_id)
+          VALUES (?, ?)'
+       );
+       $sth->execute($id, &get_database_user_id($friend));
+    }
     redirect('/details/' . $id . '?details=1');
 };
 
