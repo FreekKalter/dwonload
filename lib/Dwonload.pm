@@ -163,7 +163,7 @@ ajax '/me/files_shared_with_me' => sub{
    }else{
      $sth = database->prepare($sql);
      $sth->execute($database_id) or die $sth->errstr;
-     $sth->bind_columns( \my($id,  $filename,  $description,  $owner, $size));
+     $sth->bind_columns( \my($id,  $filename,  $description,  $owner, $size, $expiration));
      while ($sth->fetch()) {
          #get owner's name
          my $sth2 = database->prepare(
@@ -203,7 +203,7 @@ ajax '/me/files_i_shared' => sub{
        WHERE owner = ?'
    );
    $sth->execute($database_id);
-   $sth->bind_columns(\my ($id, $filename, $description, $owner, $size));
+   $sth->bind_columns(\my ($id, $filename, $description, $owner, $size, $expiration));
    my $file_list = '';
    while ($sth->fetch()) {
       $file_list .= '<tr>
@@ -282,10 +282,14 @@ post '/upload' => sub {
 
         #insert file info into database
         my $sth = database->prepare(
-            'INSERT INTO files (filename, description, owner, size)
-             VALUES (?, ?, ?, ?)'
+            'INSERT INTO files (filename, description, owner, size, expiration)
+             VALUES (?, ?, ?, ?, ?)'
         );
-        $sth->execute($file->filename, params->{'comment'}, session('user_id'), $file->size);
+
+          my $gen                = Math::Random::MT::Perl->new();
+          my $dt = DateTime->now(time_zone => 'local');
+          $dt->add(days=> 30);  #TODO: make this variable, based on account 
+        $sth->execute($file->filename, params->{'comment'}, session('user_id'), $file->size ,DateTime::Format::MySQL->format_datetime($dt));
         my $file_id = database->last_insert_id(undef, undef, undef, undef);
 
         foreach my $user (split(',', $shared_str)) {

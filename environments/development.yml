@@ -22,8 +22,6 @@ plugins:
    Database:
       driver: 'mysql'
       database: 'dwonload'
-      host: 'localhost'
-      port: 8889
       username: 'root'
       password: 'KoWd7pLBT'
       connection_check_threshold: 10
