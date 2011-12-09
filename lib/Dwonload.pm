@@ -156,7 +156,7 @@ ajax '/me/files_shared_with_me' => sub{
    $sql = 'SELECT files.*
           FROM files, shares
           WHERE shares.user_id = ? 
-          AND shares.file_id == files.id';
+          AND shares.file_id = files.id';
    $key = 'SQL:' . $user->{id} . ':' . md5($sql);
    if(defined ($mem = $memd->get($key))){
       $shared_files = $mem;
