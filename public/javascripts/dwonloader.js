@@ -6,6 +6,7 @@ $(document).ready(function(){
    tabs["#others"] = "/me/files_shared_with_me";
    tabs["#upload"] = "/me/friends_upload_form"; 
 
+   //TODO: make it match "others#_=_" OR dont make this messy shit appear at all ;-)
    var tab = window.location.href.match(/(\w*)$/)[0];
    console.log(tab);
    $("#" + tab + '-inner').load(tabs["#" + tab]);
@@ -28,7 +29,7 @@ $(document).ready(function(){
 
 function jqCheckAll( id, pID ) {
  console.log(id);
-   console.log($('#' + id).is('checked'));
+   console.log($('#' + id).is(':checked'));
     $( "#" + pID + " :checkbox").attr('checked', $('#' + id).is(':checked'));
 }
 

@@ -24,6 +24,9 @@
          <p>
             <a href="/details/<% id %>?action=delete">Delete</a>
             <a href="/details/<% id %>/edit">Edit</a>
+            <% IF reactivation %>
+               <a href="/reactivation/<% id %>/<% reactivation %>">Reactivate</a>
+            <% END %>
             <% download_link %> 
          </p>
             <% ELSE %>

@@ -66,7 +66,11 @@ get '/facebook/postback/' => sub {
 
     #check if user exists in user database, if not add him
 
-    my $sth = database->prepare('SELECT fb_id,status FROM users WHERE fb_id=?');
+    my $sth = database->prepare('
+       SELECT fb_id, status, lang
+       FROM users 
+       WHERE fb_id=?'
+    );
     $sth->execute($user->{id}) or die $sth->errstr;
     my $row = $sth->fetchrow_hashref;
     if (!$row)    #user does not existst
@@ -77,28 +81,28 @@ get '/facebook/postback/' => sub {
         );
         $sth->execute($user->{first_name}, $user->{email}, $user->{id})
           or die $sth->errstr;
-    }else{
-       if($row->{'status'} eq '0') {
+    }else{ #user exists
+       if($row->{'status'} eq '0') {#first login, update unknown info
             $sth = database->prepare(
                 'UPDATE users
                 SET email=?, status=1
                 WHERE id=?'
             );
             $sth->execute($user->{email}, $user->{'id'});
+        }else{
+         #set preferred language
+         if($row->{'lang'} eq 'nl'){
+            session lang => 'nl';
          }
+         if($row->{'lang'} eq 'en'){
+            session lang => 'en';
+         }
+         $ENV{LANGUAGE} = session('lang');
+         setlocale (LC_MESSAGES, "");
+        }
     }
-    my ($mem, $sql, $key);
-    $sql = 'SELECT id FROM users WHERE fb_id=?';
-    $key = 'SQL:' . $user->{id} . ':' . md5($sql);
-    if(defined ($mem = $memd->get($key))){
-       session user_id => $mem;
-    }else{
-       $sth = database->prepare($sql);
-       $sth->execute($user->{id});
-       $row = $sth->fetchrow_hashref;
-       session user_id => $row->{id};
-       $memd->set($key, $row->{id}, 600);
-    }
+
+    session db_id => &get_database_user_id($user->{'id'});
     redirect '/me';
 };
 
@@ -153,7 +157,7 @@ ajax '/me/files_shared_with_me' => sub{
    #generate list of files shared with me
    my ($mem, $sql, $key);
    my $shared_files = '';
-   $sql = 'SELECT files.*
+   $sql = 'SELECT files.id,  files.filename, files.description, files.owner, files.size
           FROM files, shares
           WHERE shares.user_id = ? 
           AND shares.file_id = files.id';
@@ -163,7 +167,7 @@ ajax '/me/files_shared_with_me' => sub{
    }else{
      $sth = database->prepare($sql);
      $sth->execute($database_id) or die $sth->errstr;
-     $sth->bind_columns( \my($id,  $filename,  $description,  $owner, $size, $expiration));
+     $sth->bind_columns( \my($id,  $filename,  $description,  $owner, $size));
      while ($sth->fetch()) {
          #get owner's name
          my $sth2 = database->prepare(
@@ -198,12 +202,12 @@ ajax '/me/files_i_shared' => sub{
     my $database_id = &get_database_user_id($user->{'id'});
    #generate list of uploaded files
    my $sth = database->prepare(
-      'SELECT *
+      'SELECT files.id,  files.filename, files.description, files.owner, files.size
        FROM files
        WHERE owner = ?'
    );
    $sth->execute($database_id);
-   $sth->bind_columns(\my ($id, $filename, $description, $owner, $size, $expiration));
+   $sth->bind_columns(\my ($id, $filename, $description, $owner, $size));
    my $file_list = '';
    while ($sth->fetch()) {
       $file_list .= '<tr>
@@ -289,7 +293,7 @@ post '/upload' => sub {
           my $gen                = Math::Random::MT::Perl->new();
           my $dt = DateTime->now(time_zone => 'local');
           $dt->add(days=> 30);  #TODO: make this variable, based on account 
-        $sth->execute($file->filename, params->{'comment'}, session('user_id'), $file->size ,DateTime::Format::MySQL->format_datetime($dt));
+        $sth->execute($file->filename, params->{'comment'}, session('db_id'), $file->size ,DateTime::Format::MySQL->format_datetime($dt));
         my $file_id = database->last_insert_id(undef, undef, undef, undef);
 
         foreach my $user (split(',', $shared_str)) {
@@ -337,7 +341,7 @@ get '/details/:id' => sub {
        my $file= $sth->fetchrow_hashref;
         if (params->{'details'}) {
             my $owner = undef;
-            if ($file->{'owner'} eq session('user_id')) {
+            if ($file->{'owner'} eq session('db_id')) {
                 $owner = "Yes";
             }
             #get get user who you shared this file with
@@ -362,15 +366,25 @@ get '/details/:id' => sub {
             chop($shared);
             chop($shared);
 
+            #get reactivation link
+            my $reactivation = undef;
+            $sth = database->prepare('
+               SELECT files.reactivation
+               FROM files
+               WHERE id = ?'
+            );
+            $sth->execute($id);
+            $reactivation = eval{$sth->fetchrow_hashref}->{'reactivation'};
+
             template 'details',
               { id            => $id,
                 description   => $file->{'description'},
                 size          => &get_size($file->{'size'}),
-                download_link => "<a href="
-                  . &generate_temp($id)
-                  . ">Download</a>",
+                download_link => "<a href=" . &generate_temp($id) . ">Download</a>",
                 friends => $shared,
+                reactivation => $reactivation,
                 owner   => $owner
+
               };
         }# if(params->{'details'})
         else {
@@ -386,11 +400,11 @@ get '/details/:id' => sub {
                 );
                 $sth->execute($id);
                 my $row = $sth->fetchrow_hashref;
-                if ($row->{'owner'} eq session('user_id')) {
+                if ($row->{'owner'} eq session('db_id')) {
                     if (params->{'action'} eq 'delete') {
                         if (database->quick_delete('files', {id => $id})) {
-                            template 'details',
-                              {error => 'y', description => 'File deleted'};
+                            template 'details', {error => 'y', description => 'File deleted'};
+                           #TODO:delete acutal file
                         }
                         else {
                             template 'details',
@@ -399,7 +413,6 @@ get '/details/:id' => sub {
                               };
                         }
 
-                        #TODO:delete acutal file
                     }
                 }
                 else {
@@ -429,7 +442,7 @@ get '/details/:id/edit' => sub {
         );
         $sth->execute($id);
         my $row = $sth->fetchrow_hashref;
-        if ($row->{'owner'} ne session('user_id')) {
+        if ($row->{'owner'} ne session('db_id')) {
             template 'details',
               { error       => 'y',
                 description => 'You are not the owner of the file'
@@ -606,17 +619,62 @@ get '/download_file/:generated_id' => sub {
 };
 
 any '/setlang' => sub {
-   if(params->{'lang'} eq 'nl'){
-      session lang => 'nl';
+   my $fb = Facebook::Graph->new(config->{facebook});
+   my $lang = params->{'lang'};
+   if (!session('access_token')) {
+     redirect '/';
    }
-   if(params->{'lang'} eq 'en'){
-      session lang => 'en';
+   else {
+      if($lang eq 'nl'){
+         session lang => 'nl';
+      }
+      if($lang eq 'en'){
+         session lang => 'en';
+      }
+      $ENV{LANGUAGE} = session('lang');
+      setlocale (LC_MESSAGES, "");
+      
+      my $sth = database->prepare('
+         UPDATE users
+         SET lang = ?
+         WHERE id = ?'
+      );
+      $sth->execute($lang, session('db_id'));
+      redirect '/me';
    }
-   $ENV{LANGUAGE} = session('lang');
-   setlocale (LC_MESSAGES, "");
-   redirect '/me';
 };
 
+any '/reactivate/:id/:code' => sub{
+   my $fb = Facebook::Graph->new(config->{facebook});
+   if (!session('access_token')) {
+     redirect '/';
+   }
+   else {
+      my $file_id = params->{'id'};
+      my $reactivation = params->{'code'};
+
+      my $sth = database->prepare('
+         SELECT files.id, files.reactivation
+         FROM files
+         WHERE id=?'
+      );
+      $sth->execute($file_id);
+      $sth->bind_columns(\my($db_id, $db_reactivation));
+      $sth->fetch();
+      debug($reactivation);
+      debug($db_reactivation);
+      if($reactivation eq $db_reactivation){
+         my $sth2 = database->prepare('
+            UPDATE files
+            SET expiration = ?, reactivation = NULL
+            WHERE id = ?'
+         );
+         my $dt = DateTime->now(time_zone => 'local');
+         $dt->add(days => 30);
+         $sth2->execute(DateTime::Format::MySQL->format_datetime($dt), $file_id);
+      }
+   }
+};
 any qr{.*} => sub {
     status 'not found';
     template 'special_404', {path => request->path};
