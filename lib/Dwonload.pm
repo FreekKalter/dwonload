@@ -48,8 +48,10 @@ get '/logout' => sub {
 
 get '/login' => sub {    #eenmaal geauthiriseerd, vliegt door deze en postback heen
     my $fb = Facebook::Graph->new(config->{'facebook'});
-    redirect $fb ->authorize->extend_permissions( qw(email offline_access publish_stream ))
-      ->uri_as_string;
+    my $req_uri = $fb->authorize->extend_permissions( qw(email offline_access publish_stream ))->uri_as_string; 
+    debug($req_uri);
+
+    redirect  $req_uri;
   };
 
 get '/facebook/postback/' => sub {
