@@ -236,8 +236,15 @@ img.lang {
 #about li {
   color: #404040;
 }
-.details span {
-  color: #808080;
+#details {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 500px;
+}
+#details span {
+  color: #404040;
+  text-shadow: none;
   font-weight: bold;
 }
 .input-file {

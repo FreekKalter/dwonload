@@ -1,25 +1,13 @@
-<div class="details">
+<div id="details" class="details">
    <% IF error %>
       <div class="error">
          <% description %>
       </div>
    <% ELSE %>
-      <% IF recaptcha %>
-         <script type="text/javascript">
-          var RecaptchaOptions = {
-             theme : 'white'
-          };
-          </script>
-         
-         <form action="/details" method="post"> 
-            <input type="hidden" name="id" value = <% id %> />
-            <% recaptcha %>
-            <input type="submit" value="Download" />
-         </form>
-      <% ELSE %>
+      <p><span>File name:</span> <% filename %> </p>
       <p><span>File size:</span> <% size %></p>
-            <p><span>Description:</span> <% description %></p>
-         <% IF owner %>
+         <p><span>Description:</span> <% description %></p>
+      <% IF owner %>
          <p><span>Shared with:</span> <% friends %> </p>
          <p>
             <a href="/details/<% id %>?action=delete">Delete</a>
@@ -29,10 +17,9 @@
             <% END %>
             <% download_link %> 
          </p>
-            <% ELSE %>
-            <p> <% download_link %> </p>
-         <% END %>
-         <a href="/me">Back</a>
-      <% END %><!--recaptcha -->
+      <% ELSE %>
+         <p> <% download_link %> </p>
+      <% END %>
+      <a href="/me">back</a>
    <% END %><!--error-->
 </div>

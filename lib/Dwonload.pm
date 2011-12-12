@@ -49,8 +49,6 @@ get '/logout' => sub {
 get '/login' => sub {    #eenmaal geauthiriseerd, vliegt door deze en postback heen
     my $fb = Facebook::Graph->new(config->{'facebook'});
     my $req_uri = $fb->authorize->extend_permissions( qw(email offline_access publish_stream ))->uri_as_string; 
-    debug($req_uri);
-
     redirect  $req_uri;
   };
 
@@ -78,32 +76,39 @@ get '/facebook/postback/' => sub {
     if (!$row)    #user does not existst
     {
         $sth = database->prepare(
-            'INSERT INTO users (name, email, fb_id)
-             VALUES (?, ?, ?)',
+            'INSERT INTO users (name, email, fb_id, status, lang)
+             VALUES (?, ?, ?, ?, ?)',
         );
-        $sth->execute($user->{first_name}, $user->{email}, $user->{id})
+        $sth->execute($user->{name}, $user->{email}, $user->{id}, 0, 'nl')
           or die $sth->errstr;
-    }else{ #user exists
+    }else{ #user exists but not active
        if($row->{'status'} eq '0') {#first login, update unknown info
             $sth = database->prepare(
                 'UPDATE users
-                SET email=?, status=1
+                SET email=?, status = ?, lang = ?
                 WHERE id=?'
             );
-            $sth->execute($user->{email}, $user->{'id'});
-        }else{
-         #set preferred language
-         if($row->{'lang'} eq 'nl'){
-            session lang => 'nl';
-         }
-         if($row->{'lang'} eq 'en'){
-            session lang => 'en';
-         }
-         $ENV{LANGUAGE} = session('lang');
-         setlocale (LC_MESSAGES, "");
+            $sth->execute($user->{email}, '1',  $user->{'id'}, 'nl');
+        }else{ #this is a regular
         }
     }
-
+   if($row->{'lang'}){
+      #set preferred language
+      if($row->{'lang'} eq 'nl'){
+         session lang => 'nl';
+      }
+      if($row->{'lang'} eq 'en'){
+         session lang => 'en';
+      }
+      debug('session: ', session('lang'));
+      debug('db: ', $row->{'lang'});
+      $ENV{LANGUAGE} = session('lang');
+      setlocale (LC_MESSAGES, "");
+   }else{
+      session lang => 'nl';
+      $ENV{LANGUAGE} = 'nl';
+      setlocale (LC_MESSAGES, "");
+   }
     session db_id => &get_database_user_id($user->{'id'});
     redirect '/me';
 };
@@ -380,6 +385,7 @@ get '/details/:id' => sub {
 
             template 'details',
               { id            => $id,
+                 filename     => $file->{'filename'},
                 description   => $file->{'description'},
                 size          => &get_size($file->{'size'}),
                 download_link => "<a href=" . &generate_temp($id) . ">Download</a>",
@@ -582,8 +588,11 @@ post '/details' => sub {
 
 get '/download_file/:generated_id' => sub {
     my $gen_id = params->{generated_id};
-    my $sth =
-      database->prepare('SELECT * FROM downloads WHERE download_id = ?',);
+    my $sth = database->prepare('
+         SELECT file_id , expire_time
+         FROM downloads 
+         WHERE id = ?'
+    );
     $sth->execute($gen_id);
     my $return_value = $sth->fetchrow_hashref;
     if ($return_value) {
@@ -595,7 +604,7 @@ get '/download_file/:generated_id' => sub {
 
             #get filename from database
             $sth = database->prepare('SELECT filename FROM files WHERE id=?',);
-            $sth->execute($return_value->{'id'});
+            $sth->execute($return_value->{'file_id'});
             $return_value = $sth->fetchrow_hashref;
             if ($return_value) {
                 return send_file(
@@ -755,19 +764,19 @@ sub get_size {
 
 sub generate_temp {
     #generate random string
-    my $id                 = shift;
+    my $file_id            = shift;
     my $gen                = Math::Random::MT::Perl->new();
-    my $random_download_id = '';
-    for (0 .. 10) {
-        $random_download_id .= int($gen->rand(9));
-    }
+    my @alphanumeric = ('a'..'z', 'A'..'Z', 0..9);
+    my $random_download_id = join '', (map { $alphanumeric[rand(@alphanumeric)] } @alphanumeric)[0 ..9];
 
     #add this to the database with a timeout
-    my $sth = database->prepare('INSERT INTO downloads VALUES (? , ? , ?)',);
+    my $sth = database->prepare('
+       INSERT INTO downloads (id, file_id, expire_time)
+       VALUES (? , ? , ?)'
+    );
     my $dt = DateTime->now(time_zone => 'local');
     $dt->add(hours => 1);
-    $sth->execute($id, $random_download_id,
-        DateTime::Format::MySQL->format_datetime($dt));
+    $sth->execute($random_download_id, $file_id, DateTime::Format::MySQL->format_datetime($dt));
     return '/download_file/' . $random_download_id;
 }
 true;

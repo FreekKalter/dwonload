@@ -28,7 +28,8 @@ img.lang{height:10px;float:right;margin:3px;border:1px solid #404040;}
 #about{font-size:15px;text-align:center;}
 #about p{font-size:15px;}
 #about li{color:#404040;}
-.details span{color:#808080;font-weight:bold;}
+#details{display:block;margin-left:auto;margin-right:auto;width:500px;}
+#details span{color:#404040;text-shadow:none;font-weight:bold;}
 .input-file{margin-right:100px;}
 .help-inline{display:none;}
 a.download{font-style:italic;}

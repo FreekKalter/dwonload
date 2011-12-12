@@ -8,13 +8,12 @@ $(document).ready(function(){
 
    //TODO: make it match "others#_=_" OR dont make this messy shit appear at all ;-)
    var tab = window.location.href.match(/(\w*)$/)[0];
-   console.log(tab);
    $("#" + tab + '-inner').load(tabs["#" + tab]);
 
    window.onpopstate = function(event){
-      //$(event.state.tab[0] + '-inner').load(tabs[event.state.tab[0]]);
       window.location = document.location.href;
    }
+   $('a[href^="http://dwonloaderdev.kalteronline.org/me"]').css("color", "red");
 
    $('.tabs').bind('change', function (e) {
       var regex =/#\w*/gi;
