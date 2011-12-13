@@ -1,7 +1,7 @@
 $(document).ready(function(){
    $('#upload-form').ajaxForm({beforeSubmit: validate});
 
-   var tabs = new Array();
+   var tabs = {}; //create an empty object
    tabs["#shared"] = "/me/files_i_shared";
    tabs["#others"] = "/me/files_shared_with_me";
    tabs["#upload"] = "/me/friends_upload_form"; 
@@ -11,9 +11,11 @@ $(document).ready(function(){
    $("#" + tab + '-inner').load(tabs["#" + tab]);
 
    window.onpopstate = function(event){
-      window.location = document.location.href;
+      console.log(event);
+      if(event.state){
+         window.location = document.location.href;
+      }
    }
-   $('a[href^="http://dwonloaderdev.kalteronline.org/me"]').css("color", "red");
 
    $('.tabs').bind('change', function (e) {
       var regex =/#\w*/gi;
@@ -22,6 +24,20 @@ $(document).ready(function(){
       var stateObj = { tab: div };
       history.pushState(stateObj, div, "/me/" + div.toString().substring(1));
       history.replaceState(stateObj, div, "/me/" + div.toString().substring(1));
+   });
+
+
+   $('.details_link').live('click', function(event){
+      //add a row with details about the file
+      var strip = /(.*)\?/gi;
+      var link = $(this).attr("href").match(strip).toString();
+      link = link.substring(0, link.length-1);
+
+      $("#details_result").remove();
+      $(this).closest('tr').after('<tr id="details_result"><td></td></tr>'); //prepare row
+      $("#details_result").load(link); //load ajax details
+      
+      return false;
    });
 
 });
@@ -80,5 +96,6 @@ function validate(formData, jqForm, options) {
          }
       });
       $.post('/add_friends', {friends: JSON.stringify(friendsObj)} );
+      return true;
    }
 }

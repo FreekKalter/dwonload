@@ -218,7 +218,7 @@ ajax '/me/files_i_shared' => sub{
    my $file_list = '';
    while ($sth->fetch()) {
       $file_list .= '<tr>
-      <td><a href="/details/' . $id . '?details=1">' . $filename . '</a> <a class="download" href="/details/' . $id .'">download </a></td>
+      <td><a class="details_link" href="/details/' . $id . '?details=1">' . $filename . '</a> <a class="download" href="/details/' . $id .'">download </a></td>
                   <td>' . &get_size($size) . '</td>
                   </tr>';
    } 
@@ -246,6 +246,61 @@ ajax '/me/friends_upload_form' => sub{
      }
      $friends .= '</div></div>'; #close div.span6 and div.column
    return $friends;
+};
+
+ajax '/details/:id' => sub{
+    my $id  = params->{id};
+    my $sth = database->prepare('
+       SELECT * 
+       FROM files 
+       WHERE id = ?'
+    );
+    $sth->execute($id);
+    my $file= $sth->fetchrow_hashref;
+   my $owner = undef;
+   if ($file->{'owner'} eq session('db_id')) {
+       $owner = "yes";
+   }
+   #get get user who you shared this file with
+   $sth = database->prepare(
+      'select user_id
+       from shares
+       where file_id = ?'
+    );
+   $sth->execute($id);
+   $sth->bind_columns( \my($user_id));
+   my $shared = '';  
+   while($sth->fetch()){
+       my $sth2 = database->prepare('
+           select name
+             from users
+             where id = ?'
+       );
+       $sth2->execute($user_id);
+       my $row = $sth2->fetchrow_hashref;
+       $shared .= $row->{'name'} . ', ';
+   }
+   chop($shared);
+   chop($shared);
+
+   #get reactivation link
+
+   my $return_value = "<p><span>File name:</span> $file->{'filename'} </p>
+                        <p><span>File size:</span> $file->{'size'}</p>
+                        <p><span>Description:</span> $file->{'description'}</p>";
+   if($owner){
+      $return_value .= 
+      "<p><span>Shared with:</span> <% friends %> </p>
+         <p>
+            <a href=\"/details/$id?action=delete\">Delete</a>
+            <a href=\"/details/$id/edit\">Edit</a>";
+            if($file->{'reactivation'}){
+               $return_value .= "<a href=\"/reactivation/$id/$file->{'reactivation'}\">Reactivate</a>";
+            }
+             $return_value.= '<a href="' . &generate_temp($id) . '">download</a>';
+   }else{
+       $return_value .= '<a href="' . &generate_temp($id) . '">download</a>';
+   }
 };
 
 post '/add_friends' => sub{
@@ -349,22 +404,22 @@ get '/details/:id' => sub {
         if (params->{'details'}) {
             my $owner = undef;
             if ($file->{'owner'} eq session('db_id')) {
-                $owner = "Yes";
+                $owner = "yes";
             }
             #get get user who you shared this file with
             $sth = database->prepare(
-               'SELECT user_id
-                FROM shares
-                WHERE file_id = ?'
+               'select user_id
+                from shares
+                where file_id = ?'
              );
             $sth->execute($id);
             $sth->bind_columns( \my($user_id));
             my $shared = '';  
             while($sth->fetch()){
                 my $sth2 = database->prepare('
-                    SELECT name
-                      FROM users
-                      WHERE id = ?'
+                    select name
+                      from users
+                      where id = ?'
                 );
                 $sth2->execute($user_id);
                 my $row = $sth2->fetchrow_hashref;
@@ -376,9 +431,9 @@ get '/details/:id' => sub {
             #get reactivation link
             my $reactivation = undef;
             $sth = database->prepare('
-               SELECT files.reactivation
-               FROM files
-               WHERE id = ?'
+               select files.reactivation
+               from files
+               where id = ?'
             );
             $sth->execute($id);
             $reactivation = eval{$sth->fetchrow_hashref}->{'reactivation'};
@@ -388,7 +443,7 @@ get '/details/:id' => sub {
                  filename     => $file->{'filename'},
                 description   => $file->{'description'},
                 size          => &get_size($file->{'size'}),
-                download_link => "<a href=" . &generate_temp($id) . ">Download</a>",
+                download_link => "<a href=" . &generate_temp($id) . ">download</a>",
                 friends => $shared,
                 reactivation => $reactivation,
                 owner   => $owner
