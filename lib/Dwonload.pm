@@ -286,14 +286,14 @@ ajax '/details/:id' => sub{
    #get reactivation link
 
    my $return_value = "<p><span>File name:</span> $file->{'filename'} </p>
-                        <p><span>File size:</span> $file->{'size'}</p>
+                        <p><span>File size:</span> " . &get_size($file->{'size'}) . "</p>
                         <p><span>Description:</span> $file->{'description'}</p>";
    if($owner){
       $return_value .= 
       "<p><span>Shared with:</span> <% friends %> </p>
          <p>
             <a href=\"/details/$id?action=delete\">Delete</a>
-            <a href=\"/details/$id/edit\">Edit</a>";
+            <a href=\"/details/$id/edit\">Edit</a> ";
             if($file->{'reactivation'}){
                $return_value .= "<a href=\"/reactivation/$id/$file->{'reactivation'}\">Reactivate</a>";
             }

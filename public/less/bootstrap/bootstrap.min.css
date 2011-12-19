@@ -25,6 +25,8 @@ body{background-attachment:fixed;background-color:#808080;background-repeat:repe
 #header{border-bottom:2px solid #404040;margin:5px;padding:5px;}
 img.lang{height:10px;float:right;margin:3px;border:1px solid #404040;}
 #footer{color:#e6e6e6;text-align:center;border-top:2px solid #404040;margin:5px;padding:5px;}
+#details_result_row{background-color:#404040;}
+#details_result_column{padding-left:30px;}
 #about{font-size:15px;text-align:center;}
 #about p{font-size:15px;}
 #about li{color:#404040;}

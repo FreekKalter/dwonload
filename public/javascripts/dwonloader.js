@@ -31,12 +31,27 @@ $(document).ready(function(){
       //add a row with details about the file
       var strip = /(.*)\?/gi;
       var link = $(this).attr("href").match(strip).toString();
+      var clicked_row = $(this).closest('tr');
       link = link.substring(0, link.length-1);
 
-      $("#details_result").remove();
-      $(this).closest('tr').after('<tr id="details_result"><td></td></tr>'); //prepare row
-      $("#details_result").load(link); //load ajax details
-      
+      var found = $('.tab-content').find('#details_result_row');
+      if(found.length > 0){
+         $("#details_result_column").animate({
+            opacity: 0.20,
+            height: 'toggle'
+         }, 500 ,function(){
+            $('#details_result_row').remove();
+            $(clicked_row).after('<tr id="details_result_row"><td id="details_result_column"></td><td> </td></tr>'); //prepare row
+            $("#details_result_column").load(link, function(){  //load ajax details
+               $('#details_result_row').slideDown(500);
+            });
+         });
+      }else{
+         $(this).closest('tr').after('<tr id="details_result_row"><td id="details_result_column"></td><td> </td></tr>'); //prepare row
+         $("#details_result_column").load(link, function(){  //load ajax details
+            $('#details_result_row').slideDown(500);
+         });
+      }
       return false;
    });
 
