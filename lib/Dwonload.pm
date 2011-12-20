@@ -158,6 +158,7 @@ ajax '/me/files_shared_with_me' => sub{
    push(@files, $file_id);
   }
 
+  #TODO:check this shit, only delte when nessecary
   #empty the new field, cause the user has seen them now
   database->quick_delete('new', {user_id => $database_id});
 
