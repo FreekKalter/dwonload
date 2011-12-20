@@ -79,16 +79,16 @@ get '/facebook/postback/' => sub {
             'INSERT INTO users (name, email, fb_id, status, lang)
              VALUES (?, ?, ?, ?, ?)',
         );
-        $sth->execute($user->{name}, $user->{email}, $user->{id}, 0, 'nl')
+        $sth->execute($user->{name}, $user->{email}, $user->{id}, 1, 'nl')
           or die $sth->errstr;
     }else{ #user exists but not active
        if($row->{'status'} eq '0') {#first login, update unknown info
             $sth = database->prepare(
                 'UPDATE users
                 SET email=?, status = ?, lang = ?
-                WHERE id=?'
+                WHERE fb_id=?'
             );
-            $sth->execute($user->{email}, '1',  $user->{'id'}, 'nl');
+            $sth->execute($user->{email}, '1', 'nl', $user->{'id'}) or die $!;
         }else{ #this is a regular
         }
     }
@@ -158,9 +158,10 @@ ajax '/me/files_shared_with_me' => sub{
    push(@files, $file_id);
   }
 
-  #TODO:check this shit, only delte when nessecary
   #empty the new field, cause the user has seen them now
-  database->quick_delete('new', {user_id => $database_id});
+  if(scalar(@files) > 0){ 
+     database->quick_delete('new', {user_id => $database_id});
+  }
 
    #generate list of files shared with me
    my ($mem, $sql, $key);
