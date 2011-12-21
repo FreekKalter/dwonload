@@ -356,7 +356,16 @@ post '/upload' => sub {
 
           my $gen                = Math::Random::MT::Perl->new();
           my $dt = DateTime->now(time_zone => 'local');
-          $dt->add(days=> 30);  #TODO: make this variable, based on account 
+
+          #check how long the file should be kept, based on the users account
+          my $sth2 = database->prepare('
+             SELECT accounts.days
+             FROM accounts, users
+             WHERE users.id = ? AND accounts.id = users.account_type'
+          );
+          $sth2->execute(session('db_id'));
+          $dt->add(days=> eval{$sth2->fetchrow_hashref}->{'days'});  
+
         $sth->execute($file->filename, params->{'comment'}, session('db_id'), $file->size ,DateTime::Format::MySQL->format_datetime($dt));
         my $file_id = database->last_insert_id(undef, undef, undef, undef);
 
