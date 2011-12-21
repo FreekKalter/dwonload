@@ -41,21 +41,28 @@ $(document).ready(function(){
             height: 'toggle'
          }, 500 ,function(){
             $('#details_result_row').remove();
-            $(clicked_row).after('<tr id="details_result_row"><td id="details_result_column"></td><td> </td></tr>'); //prepare row
-            $("#details_result_column").load(link, function(){  //load ajax details
-               $('#details_result_row').slideDown(500);
-            });
+            createDetailsRow(clicked_row, link, clicked_row.closest('table').find('th').lengt);
          });
       }else{
-         $(this).closest('tr').after('<tr id="details_result_row"><td id="details_result_column"></td><td> </td></tr>'); //prepare row
-         $("#details_result_column").load(link, function(){  //load ajax details
-            $('#details_result_row').slideDown(500);
-         });
+         createDetailsRow(clicked_row, link, clicked_row.closest('table').find('th').lengt);
       }
       return false;
    });
 
 });
+
+function createDetailsRow(clicked_row,link, number_of_columns){
+   var row = '<tr id="details_result_row"><td id="details_result_column"></td><td> </td>';
+   if(number_of_columns ==2){
+      row += '</tr>';
+   }else{
+      row += '<td> </td></tr>';
+   }
+   clicked_row.closest('tr').after(row); //prepare row
+   $("#details_result_column").load(link, function(){  //load ajax details
+      $('#details_result_row').slideDown(500);
+   });
+}
 
 function jqCheckAll( id, pID ) {
  console.log(id);

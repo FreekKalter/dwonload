@@ -67,7 +67,7 @@ get '/facebook/postback/' => sub {
     #check if user exists in user database, if not add him
 
     my $sth = database->prepare('
-       SELECT fb_id, status, lang
+       SELECT fb_id, account_type, lang
        FROM users 
        WHERE fb_id=?'
     );
@@ -76,16 +76,16 @@ get '/facebook/postback/' => sub {
     if (!$row)    #user does not existst
     {
         $sth = database->prepare(
-            'INSERT INTO users (name, email, fb_id, status, lang)
+            'INSERT INTO users (name, email, fb_id, account_type, lang)
              VALUES (?, ?, ?, ?, ?)',
         );
         $sth->execute($user->{name}, $user->{email}, $user->{id}, 1, 'nl')
           or die $sth->errstr;
     }else{ #user exists but not active
-       if($row->{'status'} eq '0') {#first login, update unknown info
+       if($row->{'account_type'} eq '0') {#first login, update unknown info
             $sth = database->prepare(
                 'UPDATE users
-                SET email=?, status = ?, lang = ?
+                SET email=?, account_type = ?, lang = ?
                 WHERE fb_id=?'
             );
             $sth->execute($user->{email}, '1', 'nl', $user->{'id'}) or die $!;
@@ -188,7 +188,7 @@ ajax '/me/files_shared_with_me' => sub{
          my $res = $sth2->fetchrow_hashref;
          my $owner = $res->{'name'};
 
-         $shared_files .= '<tr> <td><a href="/details/' . $id . '?details=1">' . $filename . '</a> <a class="download" href="/details/' . $id . '">download</a>';
+         $shared_files .= '<tr> <td><a class="details_link" href="/details/' . $id . '?details=1">' . $filename . '</a> <a class="download" href="/details/' . $id . '">download</a>';
          #add label if its the first time the user sees the file
          if (grep $_ eq $id, @files) {
              $shared_files .= '<span class="label success">'. __("New") . '</span>';
@@ -263,7 +263,7 @@ ajax '/details/:id' => sub{
    if ($file->{'owner'} eq session('db_id')) {
        $owner = "yes";
    }
-   #get get user who you shared this file with
+   #get users who you shared this file with
    $sth = database->prepare(
       'select user_id
        from shares
@@ -292,7 +292,7 @@ ajax '/details/:id' => sub{
                         <p><span>Description:</span> $file->{'description'}</p>";
    if($owner){
       $return_value .= 
-      "<p><span>Shared with:</span> <% friends %> </p>
+      "<p><span>Shared with:</span> " . $shared ." </p>
          <p>
             <a href=\"/details/$id?action=delete\">Delete</a>
             <a href=\"/details/$id/edit\">Edit</a> ";
@@ -317,7 +317,7 @@ post '/add_friends' => sub{
         $sth->execute($friend->{'fb_id'});
         if(!defined($sth->fetchrow_hashref)) {#no such user exist yet
            $sth = database->prepare(
-               'INSERT INTO users (name, fb_id, status)
+               'INSERT INTO users (name, fb_id, account_type)
                 VALUES (?, ?, ?)'
            );
            $sth->execute($friend->{'name'}, $friend->{'fb_id'}, 0),
@@ -743,6 +743,7 @@ any '/reactivate/:id/:code' => sub{
       }
    }
 };
+
 any qr{.*} => sub {
     status 'not found';
     template 'special_404', {path => request->path};
