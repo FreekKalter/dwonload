@@ -6,9 +6,12 @@ $(document).ready(function(){
    tabs["#others"] = "/me/files_shared_with_me";
    tabs["#upload"] = "/me/friends_upload_form"; 
 
-   //TODO: make it match "others#_=_" OR dont make this messy shit appear at all ;-)
-   var tab = window.location.href.match(/(\w*)$/)[0];
-   $("#" + tab + '-inner').load(tabs["#" + tab]);
+   if(window.location.href.match(/others#_=_$/)){
+      $("#others-inner").load(tabs["#others"]);
+   }else{
+      var tab = window.location.href.match(/(\w*)$/)[0];
+      $("#" + tab + '-inner').load(tabs["#" + tab]);
+   }
 
    window.onpopstate = function(event){
       console.log(event);
@@ -41,10 +44,10 @@ $(document).ready(function(){
             height: 'toggle'
          }, 500 ,function(){
             $('#details_result_row').remove();
-            createDetailsRow(clicked_row, link, clicked_row.closest('table').find('th').lengt);
+            createDetailsRow(clicked_row, link, clicked_row.closest('table').find('th').length);
          });
       }else{
-         createDetailsRow(clicked_row, link, clicked_row.closest('table').find('th').lengt);
+         createDetailsRow(clicked_row, link, clicked_row.closest('table').find('th').length);
       }
       return false;
    });
