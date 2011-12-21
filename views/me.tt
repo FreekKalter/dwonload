@@ -19,6 +19,17 @@
             </tr>
          </thead>
          <tbody id="others-inner">
+            <tr>
+               <td>
+                  <img src="<% request.uri_base %>/images/ajax-loader.gif">
+               </td>
+               <td>
+                  <img src="<% request.uri_base %>/images/ajax-loader.gif">
+               </td>
+               <td>
+                  <img src="<% request.uri_base %>/images/ajax-loader.gif">
+               </td>
+            </tr>
             <!--get via ajax request -->
          </tbody>
       </table>
@@ -33,6 +44,14 @@
             </tr>
          </thead>
          <tbody id="shared-inner">
+            <tr>
+               <td>
+                  <img src="<% request.uri_base %>/images/ajax-loader.gif">
+               </td>
+               <td>
+                  <img src="<% request.uri_base %>/images/ajax-loader.gif">
+               </td>
+            </tr>
             <!--get via ajax request -->
          </tbody>
       </table>
@@ -56,6 +75,7 @@
                         <label for="datafile"><% file_to_share %></label>
                         <div id="datafile" class="input" >
                            <input class="input-file" type="file" id="datafile" name="datafile">
+                              <img class='ajax-loader' src="<% request.uri_base %>/images/ajax-loader.gif">
                            <span id="datafile-help" class="help-inline">No file selected to upload.</span>
 
                             <div id="progress" class="bar">
@@ -78,6 +98,7 @@
                         <div id="friends" class="input">
                            <ul id="upload-inner" class="inputs-list">
                               <!--get via ajax request -->
+                              <img src="<% request.uri_base %>/images/ajax-loader.gif">
                            </ul>
                            <span id="friends-help" class="help-inline">Select at least 1 friend</span>
                         </div>

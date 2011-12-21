@@ -228,6 +228,7 @@ img.lang {
 }
 #details_result_row {
   background-color: #404040;
+  display: none;
 }
 #details_result_column {
   padding-left: 30px;
@@ -261,6 +262,9 @@ img.lang {
 }
 a.download {
   font-style: italic;
+}
+img.ajax-loader {
+  display: none;
 }
 label.no-padding {
   padding-top: 0px;
