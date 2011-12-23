@@ -102,7 +102,7 @@ function validate(formData, jqForm, options) {
    if(!return_value){
       return false;
    }else{
-
+       openProgressBar();
       //send friends names asynchronius from upload
       function friend(name, fb_id){
          this.name = name;

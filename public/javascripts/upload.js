@@ -8,6 +8,7 @@ function openProgressBar() {
  }
  /* patch the form-action tag to include the progress-id */
  document.getElementById("upload-form").action="/upload?X-Progress-ID=" + uuid;
+ console.log(uuid);
 
  $('#progress').slideDown('slow');
  $('img.ajax-loader').fadeIn('slow');
@@ -25,6 +26,7 @@ function fetch(uuid) {
  req = new XMLHttpRequest();
  req.open("GET", "/progress", 1);
  req.setRequestHeader("X-Progress-ID", uuid);
+ console.log(uuid);
  req.onreadystatechange = function () {
   if (req.readyState == 4) {
    if (req.status == 200) {
