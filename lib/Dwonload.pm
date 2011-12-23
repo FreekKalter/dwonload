@@ -777,6 +777,12 @@ sub get_basic_template_variables{
    $return_value->{'post_link'} = __"Post link on friends wall:";
    $return_value->{'friends'} = __"Friends to share with:";
    $return_value->{'subtitle'} = __"A simple filesharing solution for everyone!";
+
+   #upload form errors
+   
+   $return_value->{'no_friends_err'} = __"Select at least 1 friend:";
+   $return_value->{'no_file_err'} = __"Select a file to share:";
+
    return $return_value;
 };
 

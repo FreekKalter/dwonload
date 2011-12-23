@@ -76,7 +76,7 @@
                         <div id="datafile" class="input" >
                            <input class="input-file" type="file" id="datafile" name="datafile">
                               <img class='ajax-loader' src="<% request.uri_base %>/images/ajax-loader.gif">
-                           <span id="datafile-help" class="help-inline">No file selected to upload.</span>
+                              <span id="datafile-help" class="help-inline"><% no_file_err %></span>
 
                             <div id="progress" class="bar">
                              <div id="progressbar" > </div>
@@ -100,7 +100,7 @@
                               <!--get via ajax request -->
                               <img src="<% request.uri_base %>/images/ajax-loader.gif">
                            </ul>
-                           <span id="friends-help" class="help-inline">Select at least 1 friend</span>
+                           <span id="friends-help" class="help-inline"><% no_friend_err %></span>
                         </div>
                      </div>
 
