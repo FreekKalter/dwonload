@@ -100,7 +100,7 @@
                               <!--get via ajax request -->
                               <img src="<% request.uri_base %>/images/ajax-loader.gif">
                            </ul>
-                           <span id="friends-help" class="help-inline"><% no_friend_err %></span>
+                           <span id="friends-help" class="help-inline"><% no_friends_err %></span>
                         </div>
                      </div>
 

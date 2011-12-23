@@ -780,8 +780,8 @@ sub get_basic_template_variables{
 
    #upload form errors
    
-   $return_value->{'no_friends_err'} = __"Select at least 1 friend:";
-   $return_value->{'no_file_err'} = __"Select a file to share:";
+   $return_value->{'no_friends_err'} = __"Select at least 1 friend.";
+   $return_value->{'no_file_err'} = __"Select a file to share.";
 
    return $return_value;
 };

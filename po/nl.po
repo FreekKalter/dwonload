@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Dwonloader 1.0\n"
 "Report-Msgid-Bugs-To: Freek Kalter <freek@kalteronline.org>\n"
-"POT-Creation-Date: 2011-12-05 19:00+0100\n"
-"PO-Revision-Date: 2011-12-05 19:00+0100\n"
+"POT-Creation-Date: 2011-12-23 17:41+0100\n"
+"PO-Revision-Date: 2011-12-23 17:41+0100\n"
 "Last-Translator: Freek Kalter <freek@kalteronline.org>\n"
 "Language-Team: English\n"
 "Language: en_US\n"
@@ -17,53 +17,61 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../lib/Dwonload.pm:169
+#: ../lib/Dwonload.pm:194
 msgid "New"
 msgstr "Nieuw"
 
-#: ../lib/Dwonload.pm:584
+#: ../lib/Dwonload.pm:765
 msgid "Files I shared"
 msgstr "Bestanden die ik heb gedeeld"
 
-#: ../lib/Dwonload.pm:585
+#: ../lib/Dwonload.pm:766
 msgid "Files shared with me"
 msgstr "Bestanden die met mij zijn gedeeld"
 
-#: ../lib/Dwonload.pm:586
+#: ../lib/Dwonload.pm:767
 msgid "Upload"
 msgstr "Upload"
 
-#: ../lib/Dwonload.pm:589
+#: ../lib/Dwonload.pm:770
 msgid "Filename"
 msgstr "Bestandsnaam"
 
-#: ../lib/Dwonload.pm:590
+#: ../lib/Dwonload.pm:771
 msgid "Size"
 msgstr "Grootte"
 
-#: ../lib/Dwonload.pm:591
+#: ../lib/Dwonload.pm:772
 msgid "Owner"
 msgstr "Eigenaar"
 
-#: ../lib/Dwonload.pm:594
+#: ../lib/Dwonload.pm:775
 msgid "Comment:"
 msgstr "Beschrijving:"
 
-#: ../lib/Dwonload.pm:595
+#: ../lib/Dwonload.pm:776
 msgid "File to share:"
 msgstr "Bestand om te delen:"
 
-#: ../lib/Dwonload.pm:596
+#: ../lib/Dwonload.pm:777
 msgid "Post link on friends wall:"
 msgstr "Plaats link bij vrienden op wall:"
 
-#: ../lib/Dwonload.pm:597
+#: ../lib/Dwonload.pm:778
 msgid "Friends to share with:"
 msgstr "Vrienden om bestand mee te delen:"
 
-#: ../lib/Dwonload.pm:598
+#: ../lib/Dwonload.pm:779
 msgid "A simple filesharing solution for everyone!"
 msgstr "Een simpele manier om bestanden te delen."
+
+#: ../lib/Dwonload.pm:783
+msgid "Select at least 1 friend."
+msgstr "Selecteer minstens 1 vriend."
+
+#: ../lib/Dwonload.pm:784
+msgid "Select a file to share."
+msgstr "Selecteer een bestand om te delen."
 
 #~ msgid "Hello dudes!"
 #~ msgstr "Hallo mensen!"
