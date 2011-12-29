@@ -1,5 +1,7 @@
 use DBI;
 use Data::Dumper qw(Dumper);
+use DateTime;
+use DateTime::Format::MySQL;
 
 use strict;
 use warnings;
@@ -16,31 +18,101 @@ while(my $ref = $sth->fetchrow_hashref){
    push @tables, $ref->{'Tables_in_dwonload'};
 }
 
-#TODO: foreign key contstraints (this is probably a BITCH)
-foreach my $table(@tables){
-   $sth = $dbh->prepare("SHOW columns FROM $table");
-   $sth->execute();
-   my $columns = '';
-   my $values= '';
-   while(my $column = $sth->fetchrow_hashref){
-      $columns .= $column->{'Field'} . ", ";
-      if($column->{'Type'} =~ m/varchar\((\d+)\)/){
-         $values .= &gen_rand($1) . ', ';
-      } 
-      if($column->{'Type'} =~ m/int\((\d+)\)/){
-         $values .= &gen_rand($1, 'num') . ', ';
+for(my $i=0; $i < $ARGV[0]; $i++){
+   foreach my $table(@tables){
+      $sth = $dbh->prepare("SHOW columns FROM $table");
+      $sth->execute();
+      my $columns = '';
+      my @values;
+      my $skip_table = undef;
+      while(my $column = $sth->fetchrow_hashref){
+         if($column->{'Extra'} eq ''){          # if its not auto incremented
+            if($column->{'Key'} eq 'MUL' or $column->{'Key'} eq 'UNI'){      # if its a referece to another table (foreing key constraint)
+
+            #print Dumper($column);
+               my $sth2 = $dbh->prepare('
+                  select REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
+                  from information_schema.KEY_COLUMN_USAGE
+                  where table_name = ? AND column_name = ?'
+               );
+               $sth2->execute($table, $column->{'Field'});
+               if(my $result = $sth2->fetchrow_hashref()){
+                  #print Dumper($result);
+                  my $sql = "select $result->{'REFERENCED_COLUMN_NAME'} from $result->{'REFERENCED_TABLE_NAME'} order by rand() limit 1";
+                  #print "$sql\n";
+                  $sth2 = $dbh->prepare($sql);
+                  $sth2->execute() or die $!;
+                  if(my $res = $sth2->fetchrow_hashref){ # if the to referece table is still empty, do nothing
+                     $columns .= $column->{'Field'} . ", ";
+                     push @values , $res->{$result->{'REFERENCED_COLUMN_NAME'}};
+                  }else{
+                     $skip_table = 'yes';
+                  }
+               }else{# no reference found, MUL also applies to indexed columns wich do not have a foreign key constraints
+                  $columns .= $column->{'Field'} . ", ";
+                  if($column->{'Type'} =~ m/varchar\((\d+)\)/){
+                     push @values ,  &gen_rand(rand $1);
+                  } 
+                  if($column->{'Type'} =~ m/int\((\d+)\)/){
+                     push @values , &gen_rand(rand $1, 'num');
+                  }
+                  if($column->{'Type'} =~ m/datetime/){
+                     push @values , &gen_random_date();
+                  }
+               }
+
+            }else{
+               $columns .= $column->{'Field'} . ", ";
+               if($column->{'Key'} eq 'PRI'){
+                  if($column->{'Type'} =~ m/varchar\((\d+)\)/){
+                     push @values ,  &gen_rand($1);
+                  } 
+                  if($column->{'Type'} =~ m/int\((\d+)\)/){
+                     push @values , &gen_rand($1, 'num');
+                  }
+                  if($column->{'Type'} =~ m/datetime/){
+                     push @values , &gen_random_date();
+                  }
+               }else{
+                  if($column->{'Type'} =~ m/varchar\((\d+)\)/){
+                     push @values ,  &gen_rand(rand $1);
+                  } 
+                  if($column->{'Type'} =~ m/int\((\d+)\)/){
+                     push @values , &gen_rand(rand $1, 'num');
+                  }
+                  if($column->{'Type'} =~ m/datetime/){
+                     push @values , &gen_random_date();
+                  }
+               }
+            }
+         }
+      }
+      chop($columns);
+      chop($columns);
+      if(!$skip_table){
+         my $sql = "INSERT INTO $table ($columns) VALUES (";
+         for(my $i=0; $i< scalar @values; $i++){
+            if($i == scalar(@values)-1){
+               $sql .= '?';
+            }else{
+               $sql .= '?,';
+            }
+         }
+         $sql .= ')';
+         #print $sql;
+         #print join(',', @values) . "\n\n";
+         $sth = $dbh->prepare($sql);
+         $sth->execute(@values) or die $!;
       }
    }
-   chop($columns);
-   chop($values);
-   chop($columns);
-   chop($values);
+}
 
-   my $sql = "INSERT INTO $table ($columns) VALUES ($values)";
-   print "$sql\n\n";
-
-   $sth = $dbh->prepare($sql);
-   $sth->execute();
+sub gen_random_date{
+   my $dt = DateTime->now(time_zone => 'local');
+   $dt->add(days => rand 80);
+   $dt->add(hours => rand 59);
+   $dt->add(minutes => rand 59);
+   return DateTime::Format::MySQL->format_datetime($dt);
 }
 
 sub gen_rand
