@@ -23,11 +23,11 @@ DROP TABLE IF EXISTS `accounts`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `accounts` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(40) NOT NULL,
-  `days` int(11) NOT NULL,
+  `id` int(2) NOT NULL AUTO_INCREMENT,
+  `name` varchar(40) COLLATE utf8_bin NOT NULL,
+  `days` int(5) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=467 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -41,7 +41,9 @@ CREATE TABLE `downloads` (
   `id` varchar(10) COLLATE utf8_bin NOT NULL,
   `file_id` int(11) NOT NULL,
   `expire_time` datetime NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `file_id` (`file_id`),
+  CONSTRAINT `downloads_ibfk_1` FOREIGN KEY (`file_id`) REFERENCES `files` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -60,8 +62,10 @@ CREATE TABLE `files` (
   `size` int(11) NOT NULL,
   `expiration` datetime NOT NULL,
   `reactivation` varchar(20) COLLATE utf8_bin DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=186 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+  PRIMARY KEY (`id`),
+  KEY `owner` (`owner`),
+  CONSTRAINT `files_ibfk_1` FOREIGN KEY (`owner`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=466 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -75,8 +79,12 @@ CREATE TABLE `new` (
   `id` int(20) NOT NULL AUTO_INCREMENT,
   `user_id` int(20) NOT NULL,
   `file_id` int(20) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=8 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  KEY `file_id` (`file_id`),
+  CONSTRAINT `new_ibfk_2` FOREIGN KEY (`file_id`) REFERENCES `files` (`id`),
+  CONSTRAINT `new_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=465 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -89,9 +97,13 @@ DROP TABLE IF EXISTS `shares`;
 CREATE TABLE `shares` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `file_id` int(11) NOT NULL,
-  `user_id` varchar(30) COLLATE utf8_bin NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=55 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+  `user_id` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `file_id` (`file_id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `shares_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `shares_ibfk_1` FOREIGN KEY (`file_id`) REFERENCES `files` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=465 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -108,8 +120,11 @@ CREATE TABLE `users` (
   `fb_id` varchar(60) COLLATE utf8_bin NOT NULL,
   `account_type` int(2) NOT NULL,
   `lang` varchar(5) COLLATE utf8_bin NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+  PRIMARY KEY (`id`),
+  KEY `fb_id` (`fb_id`),
+  KEY `account_type` (`account_type`),
+  CONSTRAINT `users_ibfk_1` FOREIGN KEY (`account_type`) REFERENCES `accounts` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=467 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -121,4 +136,4 @@ CREATE TABLE `users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2011-12-21 17:44:45
+-- Dump completed on 2011-12-30 21:14:14
