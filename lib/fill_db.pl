@@ -29,7 +29,6 @@ for(my $i=0; $i < $ARGV[0]; $i++){
          if($column->{'Extra'} eq ''){          # if its not auto incremented
             if($column->{'Key'} eq 'MUL' or $column->{'Key'} eq 'UNI'){      # if its a referece to another table (foreing key constraint)
 
-            #print Dumper($column);
                my $sth2 = $dbh->prepare('
                   select REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
                   from information_schema.KEY_COLUMN_USAGE
@@ -50,16 +49,18 @@ for(my $i=0; $i < $ARGV[0]; $i++){
                   }
                }else{# no reference found, MUL also applies to indexed columns wich do not have a foreign key constraints
                   $columns .= $column->{'Field'} . ", ";
-                  &gen_column_value(\@values, $column->{'Field'}, 'yes');
+                  &gen_column_value(\@values, $column->{'Type'}, 'yes');
                }
 
             }else{
+               #print Dumper(@values);
                $columns .= $column->{'Field'} . ", ";
                if($column->{'Key'} eq 'PRI'){
-                  &gen_column_value(\@values, $column->{'Field'});
+                  &gen_column_value(\@values, $column->{'Type'});
                }else{
-                  &gen_column_value(\@values, $column->{'Field'}, 'yes');
+                  &gen_column_value(\@values, $column->{'Type'}, 'yes');
                }
+               #print Dumper(@values);
             }
          }
       }
@@ -85,6 +86,7 @@ for(my $i=0; $i < $ARGV[0]; $i++){
 
 sub gen_column_value{
    my ($values_ref, $type, $random_length) = @_;
+   #print "$type\n";
    if($random_length){
       if($type =~ m/varchar\((\d+)\)/){
          push @$values_ref ,  &gen_rand(rand $1);
