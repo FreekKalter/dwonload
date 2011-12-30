@@ -50,39 +50,15 @@ for(my $i=0; $i < $ARGV[0]; $i++){
                   }
                }else{# no reference found, MUL also applies to indexed columns wich do not have a foreign key constraints
                   $columns .= $column->{'Field'} . ", ";
-                  if($column->{'Type'} =~ m/varchar\((\d+)\)/){
-                     push @values ,  &gen_rand(rand $1);
-                  } 
-                  if($column->{'Type'} =~ m/int\((\d+)\)/){
-                     push @values , &gen_rand(rand $1, 'num');
-                  }
-                  if($column->{'Type'} =~ m/datetime/){
-                     push @values , &gen_random_date();
-                  }
+                  &gen_column_value(\@values, $column->{'Field'}, 'yes');
                }
 
             }else{
                $columns .= $column->{'Field'} . ", ";
                if($column->{'Key'} eq 'PRI'){
-                  if($column->{'Type'} =~ m/varchar\((\d+)\)/){
-                     push @values ,  &gen_rand($1);
-                  } 
-                  if($column->{'Type'} =~ m/int\((\d+)\)/){
-                     push @values , &gen_rand($1, 'num');
-                  }
-                  if($column->{'Type'} =~ m/datetime/){
-                     push @values , &gen_random_date();
-                  }
+                  &gen_column_value(\@values, $column->{'Field'});
                }else{
-                  if($column->{'Type'} =~ m/varchar\((\d+)\)/){
-                     push @values ,  &gen_rand(rand $1);
-                  } 
-                  if($column->{'Type'} =~ m/int\((\d+)\)/){
-                     push @values , &gen_rand(rand $1, 'num');
-                  }
-                  if($column->{'Type'} =~ m/datetime/){
-                     push @values , &gen_random_date();
-                  }
+                  &gen_column_value(\@values, $column->{'Field'}, 'yes');
                }
             }
          }
