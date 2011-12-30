@@ -107,6 +107,28 @@ for(my $i=0; $i < $ARGV[0]; $i++){
    }
 }
 
+sub gen_column_value{
+   my ($values_ref, $type, $random_length) = @_;
+   if($random_length){
+      if($type =~ m/varchar\((\d+)\)/){
+         push @$values_ref ,  &gen_rand(rand $1);
+      } 
+      if($type =~ m/int\((\d+)\)/){
+         push @$values_ref , &gen_rand(rand $1, 'num');
+      }
+   }else{
+      if($type =~ m/varchar\((\d+)\)/){
+         push @$values_ref ,  &gen_rand($1);
+      } 
+      if($type =~ m/int\((\d+)\)/){
+         push @$values_ref , &gen_rand($1, 'num');
+      }
+   }
+   if($type =~ m/datetime/){
+      push @$values_ref , &gen_random_date();
+   }
+}
+
 sub gen_random_date{
    my $dt = DateTime->now(time_zone => 'local');
    $dt->add(days => rand 80);
