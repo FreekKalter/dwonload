@@ -2,6 +2,7 @@ use DBI;
 use Data::Dumper qw(Dumper);
 use DateTime;
 use DateTime::Format::MySQL;
+use Term::ProgressBar;
 
 use strict;
 use warnings;
@@ -17,8 +18,12 @@ my @tables;
 while(my $ref = $sth->fetchrow_hashref){
    push @tables, $ref->{'Tables_in_dwonload'};
 }
+my $progress = Term::ProgressBar->new({count => $ARGV[0], name => "progress: :"});
+
 
 for(my $i=0; $i < $ARGV[0]; $i++){
+   $progress->update($i);
+
    foreach my $table(@tables){
       $sth = $dbh->prepare("SHOW columns FROM $table");
       $sth->execute();
@@ -83,6 +88,7 @@ for(my $i=0; $i < $ARGV[0]; $i++){
       }
    }
 }
+print "\n";
 
 sub gen_column_value{
    my ($values_ref, $type, $random_length) = @_;
