@@ -7,8 +7,6 @@ use Term::ProgressBar;
 use strict;
 use warnings;
 
-my $db = $ARGV[0];
-
 my $dbh = DBI->connect('DBI:mysql:database=dwonload;mysql_socket=/var/run/mysqld/mysqld.sock', 'root','KoWd7pLBT');
 
 my $sth = $dbh->prepare('SHOW tables');
@@ -18,38 +16,72 @@ my @tables;
 while(my $ref = $sth->fetchrow_hashref){
    push @tables, $ref->{'Tables_in_dwonload'};
 }
+
+$sth = $dbh->prepare('
+   select TABLE_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
+   from information_schema.KEY_COLUMN_USAGE
+   where CONSTRAINT_SCHEMA = \'dwonload\''
+);
+$sth->execute();
+my $info_schema;
+while(my $tmp = $sth->fetchrow_hashref){
+   $info_schema->{$tmp->{'TABLE_NAME'}}->{$tmp->{'COLUMN_NAME'}} = $tmp; 
+}
+
 my $progress = Term::ProgressBar->new({count => $ARGV[0], name => "progress: :"});
 $progress->minor(0);
 my $next_update=0;
 
+my $column_info;
+foreach my $table(@tables){
+   my $sth = $dbh->prepare("show columns from $table");
+   $sth->execute();
+   while(my $result = $sth->fetchrow_hashref){
+      $column_info->{$table}->{$result->{'Field'}} = $result;
+   }
+}
 
 for(my $i=0; $i < $ARGV[0]; $i++){
 
    foreach my $table(@tables){
-      $sth = $dbh->prepare("SHOW columns FROM $table");
-      $sth->execute();
+      #$sth = $dbh->prepare("SHOW columns FROM $table");
+      #$sth->execute();
       my $columns = '';
       my @values;
       my $skip_table = undef;
-      while(my $column = $sth->fetchrow_hashref){
+      while(my($name, $column) = each(%{$column_info->{$table}})){
          if($column->{'Extra'} eq ''){          # if its not auto incremented
-            if($column->{'Key'} eq 'MUL' or $column->{'Key'} eq 'UNI'){      # if its a referece to another table (foreing key constraint)
+            if($column->{'Key'} eq 'MUL' or $column->{'Key'} eq 'UNI'){      # if its a referece to another table (foreign key constraint)
+               if($info_schema->{$table}->{$column->{'Field'}}){
 
-               my $sth2 = $dbh->prepare('
-                  select REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
-                  from information_schema.KEY_COLUMN_USAGE
-                  where table_name = ? AND column_name = ?'
-               );
-               $sth2->execute($table, $column->{'Field'});
-               if(my $result = $sth2->fetchrow_hashref()){
-                  #print Dumper($result);
-                  my $sql = "select $result->{'REFERENCED_COLUMN_NAME'} from $result->{'REFERENCED_TABLE_NAME'} order by rand() limit 1";
-                  #print "$sql\n";
-                  $sth2 = $dbh->prepare($sql);
-                  $sth2->execute() or die $!;
-                  if(my $res = $sth2->fetchrow_hashref){ # if the to referece table is still empty, do nothing
+                  my ($sql, $sth2, $res);
+                  my $refed_column = $column_info->{$table}->{$info_schema->{$table}->{$column->{'Field'}}->{'REFERENCED_COLUMN_NAME'}};
+                  if($column_info->{$table}->{$info_schema->{$table}->{$column->{'Field'}}->{'REFERENCED_COLUMN_NAME'}}->{'Extra'} eq 'auto_increment'){
+                     $sth2 = $dbh->prepare("select max($column->{'Field'}) from $table");
+                     $sth2->execute() or die $!;
+                     if(my $max = $sth2->fetchrow_hashref->{"max($column->{'Field'})"}){
+                        my $random_id = rand $max;
+                        $sql = "select $info_schema->{$table}->{$column->{'Field'}}->{'REFERENCED_COLUMN_NAME'} 
+                                   from $info_schema->{$table}->{$column->{'Field'}}->{'REFERENCED_TABLE_NAME'} 
+                                   where $info_schema->{$table}->{$column->{'Field'}}->{'REFERENCED_COLUMN_NAME'} = ?";
+                        $sth2 = $dbh->prepare($sql);
+                        $sth2->execute($random_id) or die $!;
+                        $res = $sth2->fetchrow_hashref;
+                     }else{
+                        $res = undef;
+                     }
+                  }else{
+                     $sql = "select $info_schema->{$table}->{$column->{'Field'}}->{'REFERENCED_COLUMN_NAME'} 
+                                from $info_schema->{$table}->{$column->{'Field'}}->{'REFERENCED_TABLE_NAME'} 
+                                order by rand() limit 1";
+                     $sth2 = $dbh->prepare($sql);
+                     $sth2->execute() or die $!;
+                     $res  = $sth2->fetchrow_hashref;
+                  }
+
+                  if($res){ # if the to referece table is still empty, do nothing
                      $columns .= $column->{'Field'} . ", ";
-                     push @values , $res->{$result->{'REFERENCED_COLUMN_NAME'}};
+                     push @values , $res->{$info_schema->{$table}->{$column->{'Field'}}->{'REFERENCED_COLUMN_NAME'}};
                   }else{
                      $skip_table = 'yes';
                   }
