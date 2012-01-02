@@ -17,29 +17,27 @@ while(my $ref = $sth->fetchrow_hashref){
    push @tables, $ref->{'Tables_in_dwonload'};
 }
 
-$sth = $dbh->prepare('
-   select TABLE_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
-   from information_schema.KEY_COLUMN_USAGE
-   where CONSTRAINT_SCHEMA = \'dwonload\''
-);
-$sth->execute();
-my $info_schema;
-while(my $tmp = $sth->fetchrow_hashref){
-   $info_schema->{$tmp->{'TABLE_NAME'}}->{$tmp->{'COLUMN_NAME'}} = $tmp; 
-}
-
-my $progress = Term::ProgressBar->new({count => $ARGV[0], name => "progress: :"});
-$progress->minor(0);
-my $next_update=0;
-
 my $column_info;
 foreach my $table(@tables){
    my $sth = $dbh->prepare("show columns from $table");
    $sth->execute();
    while(my $result = $sth->fetchrow_hashref){
       $column_info->{$table}->{$result->{'Field'}} = $result;
+      my $sth2 = $dbh->prepare("
+         select TABLE_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
+         from information_schema.KEY_COLUMN_USAGE
+         where TABLE_NAME = '$table' and COLUMN_NAME = '$result->{'Field'}' and REFERENCED_TABLE_NAME IS NOT NULL"
+      );
+      $sth2->execute();
+      if(my $res = $sth2->fetchrow_hashref){
+         $column_info->{$table}->{$result->{'Field'}}->{'ref_table'} = $res->{'REFERENCED_TABLE_NAME'};
+         $column_info->{$table}->{$result->{'Field'}}->{'ref_column'} = $res->{'REFERENCED_COLUMN_NAME'};
+      }
    }
 }
+my $progress = Term::ProgressBar->new({count => $ARGV[0], name => "progress: "});
+$progress->minor(0);
+my $next_update=0;
 
 for(my $i=0; $i < $ARGV[0]; $i++){
 
@@ -49,56 +47,48 @@ for(my $i=0; $i < $ARGV[0]; $i++){
       my $columns = '';
       my @values;
       my $skip_table = undef;
-      while(my($name, $column) = each(%{$column_info->{$table}})){
-         if($column->{'Extra'} eq ''){          # if its not auto incremented
-            if($column->{'Key'} eq 'MUL' or $column->{'Key'} eq 'UNI'){      # if its a referece to another table (foreign key constraint)
-               if($info_schema->{$table}->{$column->{'Field'}}){
-
-                  my ($sql, $sth2, $res);
-                  my $refed_column = $column_info->{$table}->{$info_schema->{$table}->{$column->{'Field'}}->{'REFERENCED_COLUMN_NAME'}};
-                  if($column_info->{$table}->{$info_schema->{$table}->{$column->{'Field'}}->{'REFERENCED_COLUMN_NAME'}}->{'Extra'} eq 'auto_increment'){
-                     $sth2 = $dbh->prepare("select max($column->{'Field'}) from $table");
-                     $sth2->execute() or die $!;
-                     if(my $max = $sth2->fetchrow_hashref->{"max($column->{'Field'})"}){
-                        my $random_id = rand $max;
-                        $sql = "select $info_schema->{$table}->{$column->{'Field'}}->{'REFERENCED_COLUMN_NAME'} 
-                                   from $info_schema->{$table}->{$column->{'Field'}}->{'REFERENCED_TABLE_NAME'} 
-                                   where $info_schema->{$table}->{$column->{'Field'}}->{'REFERENCED_COLUMN_NAME'} = ?";
-                        $sth2 = $dbh->prepare($sql);
-                        $sth2->execute($random_id) or die $!;
-                        $res = $sth2->fetchrow_hashref;
-                     }else{
-                        $res = undef;
-                     }
-                  }else{
-                     $sql = "select $info_schema->{$table}->{$column->{'Field'}}->{'REFERENCED_COLUMN_NAME'} 
-                                from $info_schema->{$table}->{$column->{'Field'}}->{'REFERENCED_TABLE_NAME'} 
-                                order by rand() limit 1";
-                     $sth2 = $dbh->prepare($sql);
-                     $sth2->execute() or die $!;
-                     $res  = $sth2->fetchrow_hashref;
+      while(my($column_name, $column) = each(%{$column_info->{$table}})){
+         if($column->{'Extra'} eq ''){   # if the column is auto incremented, nothing needs to be done for this table
+            if($column->{'ref_table'}){ #foreign key
+               my $sql;
+               if($column_info->{$column->{'ref_table'}}->{$column->{'ref_column'}}->{'Extra'} eq 'auto_increment'){ #if referenced column is ai, make use of super fast random function
+                  $sth = $dbh->prepare("select max($column->{'ref_column'}) from $column->{'ref_table'}");
+                  $sth->execute();
+                  my $max = $sth->fetchrow_hashref->{"max($column->{'ref_column'})"};
+                  my $random_id;
+                  if($max){ # if referenced tables has rows, get one 
+                     $random_id = rand $max;
+                     $sql = "
+                        select $column->{'ref_column'}
+                        from $column->{'ref_table'}
+                        where $column->{'ref_column'} >= '$random_id'";
+                  }else{ # no rows yet in referenced table, skip it
+                     $skip_table = 'yes';
                   }
-
-                  if($res){ # if the to referece table is still empty, do nothing
-                     $columns .= $column->{'Field'} . ", ";
-                     push @values , $res->{$info_schema->{$table}->{$column->{'Field'}}->{'REFERENCED_COLUMN_NAME'}};
+               }else{
+                  $sql = " 
+                     select $column->{'ref_column'}
+                     from $column->{'ref_table'}
+                     order by rand() limit 1";
+               }
+               if(!$skip_table){
+                  $sth = $dbh->prepare($sql);
+                  $sth->execute();
+                  if(my $result = $sth->fetchrow_hashref){ #if 
+                     $columns .= $column_name . ", ";
+                     push @values, $result->{$column->{'ref_column'}}; #add the just selected id as value
                   }else{
                      $skip_table = 'yes';
                   }
-               }else{# no reference found, MUL also applies to indexed columns wich do not have a foreign key constraints
-                  $columns .= $column->{'Field'} . ", ";
-                  &gen_column_value(\@values, $column->{'Type'}, 'yes');
                }
-
-            }else{
-               #print Dumper(@values);
-               $columns .= $column->{'Field'} . ", ";
+            }else{ # no foreign key, just add random data
+               $columns .= $column_name . ", ";
                if($column->{'Key'} eq 'PRI'){
                   &gen_column_value(\@values, $column->{'Type'});
                }else{
                   &gen_column_value(\@values, $column->{'Type'}, 'yes');
                }
-               #print Dumper(@values);
+
             }
          }
       }
@@ -114,8 +104,6 @@ for(my $i=0; $i < $ARGV[0]; $i++){
             }
          }
          $sql .= ')';
-         #print $sql;
-         #print join(',', @values) . "\n\n";
          $sth = $dbh->prepare($sql);
          $sth->execute(@values) or die $!;
          $next_update = $progress->update($i)
@@ -128,7 +116,6 @@ print "\n";
 
 sub gen_column_value{
    my ($values_ref, $type, $random_length) = @_;
-   #print "$type\n";
    if($random_length){
       if($type =~ m/varchar\((\d+)\)/){
          push @$values_ref ,  &gen_rand(rand $1);
