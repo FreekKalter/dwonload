@@ -19,10 +19,11 @@ while(my $ref = $sth->fetchrow_hashref){
    push @tables, $ref->{'Tables_in_dwonload'};
 }
 my $progress = Term::ProgressBar->new({count => $ARGV[0], name => "progress: :"});
+$progress->minor(0);
+my $next_update=0;
 
 
 for(my $i=0; $i < $ARGV[0]; $i++){
-   $progress->update($i);
 
    foreach my $table(@tables){
       $sth = $dbh->prepare("SHOW columns FROM $table");
@@ -85,9 +86,12 @@ for(my $i=0; $i < $ARGV[0]; $i++){
          #print join(',', @values) . "\n\n";
          $sth = $dbh->prepare($sql);
          $sth->execute(@values) or die $!;
+         $next_update = $progress->update($i)
+            if $i >= $next_update;
       }
    }
 }
+$progress->update($ARGV[0]);
 print "\n";
 
 sub gen_column_value{
