@@ -1,5 +1,5 @@
 $(document).ready(function(){
-   $('#upload-form').ajaxForm({beforeSubmit: validate});
+//   $('#upload-form').ajaxForm({beforeSubmit: validate});
 
    var tabs = {}; //create an empty object
    tabs["#shared"] = "/me/files_i_shared";
@@ -14,7 +14,6 @@ $(document).ready(function(){
    }
 
    window.onpopstate = function(event){
-      console.log(event);
       if(event.state){
          window.location = document.location.href;
       }
@@ -68,8 +67,6 @@ function createDetailsRow(clicked_row,link, number_of_columns){
 }
 
 function jqCheckAll( id, pID ) {
- console.log(id);
-   console.log($('#' + id).is(':checked'));
     $( "#" + pID + " :checkbox").attr('checked', $('#' + id).is(':checked'));
 }
 
@@ -102,25 +99,25 @@ function validate(formData, jqForm, options) {
    if(!return_value){
       return false;
    }else{
-       openProgressBar();
       //send friends names asynchronius from upload
-      function friend(name, fb_id){
-         this.name = name;
-         this.fb_id = fb_id;
-      }
-
-      var friendsObj = new Array(); //array of friend objects
-
-      //added checked friends to array
-      $('label.check').each(function(index){
-         if( $(this).find('input').attr('checked')){
-            var fb_id = $(this).find('input').attr("value");
-            var name = $(this).find('span').text();
-            tmpFriend = new friend(name, fb_id);
-            friendsObj.push(tmpFriend);
-         }
-      });
-      $.post('/add_friends', {friends: JSON.stringify(friendsObj)} );
+//      function friend(name, fb_id){
+//         this.name = name;
+//         this.fb_id = fb_id;
+//      }
+//
+//      var friendsObj = new Array(); //array of friend objects
+//
+//      //added checked friends to array
+//      $('label.check').each(function(index){
+//         if( $(this).find('input').attr('checked')){
+//            var fb_id = $(this).find('input').attr("value");
+//            var name = $(this).find('span').text();
+//            tmpFriend = new friend(name, fb_id);
+//            friendsObj.push(tmpFriend);
+//         }
+//      });
+//      $.post('/add_friends', {friends: JSON.stringify(friendsObj)} );
+//       openProgressBar(uuid);
       return true;
    }
 }

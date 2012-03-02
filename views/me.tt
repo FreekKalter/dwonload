@@ -59,7 +59,7 @@
 
    <div id="upload" <% IF tab == 'upload' %> class="active" <% END %>>
       <div class="centerblock">
-         <form id="upload-form" enctype="multipart/form-data" action="/upload" method="post">
+         <form id="upload-form" enctype="multipart/form-data" action="/upload" method="post" onsubmit="openProgressBar(); return true;">
             <div class="row">
                <div class="span12">
                   <fieldset>
