@@ -29,10 +29,10 @@ my $memd = new Cache::Memcached::Fast({
 
 get '/' => sub {
     if (session('access_token')) {
-        redirect '/me';
+        return redirect '/me';
     }
     else {
-        redirect '/about';
+        return redirect '/about';
     }
 };
 
@@ -115,10 +115,7 @@ get '/facebook/postback/' => sub {
 
 
 get '/me/:tab' => sub {
-   my $fb = &check_auth();
-   if(!$fb){
-      redirect '/about';
-   }
+   return redirect '/about' if !&check_auth();
    my $template_options = &get_basic_template_variables; 
    $template_options->{'tab'}  = params->{'tab'};
    template 'me', $template_options ;
@@ -137,13 +134,12 @@ get '/me' => sub {
 };
 
 ajax '/me/files_shared_with_me' => sub{
-   my $fb = &check_auth();
-   if(!$fb){
-      redirect '/about';
-   }
-    my $response = $fb->query->find('me')->request;
-    my $user     = $response->as_hashref;
-    my $database_id = &get_database_user_id($user->{'id'});
+   my $fb =&check_auth(); 
+   return redirect '/about' if !$fb;
+   my $response = $fb->query->find('me')->request;
+   my $user     = $response->as_hashref;
+   my $database_id = &get_database_user_id($user->{'id'});
+
   #get file_ids that are new since last login
   my $sth = database->prepare(
       'SELECT file_id
@@ -201,10 +197,8 @@ ajax '/me/files_shared_with_me' => sub{
 };
 
 ajax '/me/files_i_shared' => sub{
-   my $fb = &check_auth();
-   if(!$fb){
-      redirect '/about';
-   }
+   my $fb =&check_auth(); 
+   return redirect '/about' if !$fb;
    
     my $response = $fb->query->find('me')->request;
     my $user     = $response->as_hashref;
@@ -230,7 +224,7 @@ ajax '/me/files_i_shared' => sub{
 ajax '/me/friends_upload_form' => sub{
    my $fb = &check_auth();
    if(!$fb){
-      redirect '/about';
+      return redirect '/about';
    }
      #generate list of friends to share files with
      my $friends_response = $fb->query->find('me/friends')->request;
@@ -328,80 +322,75 @@ post '/add_friends' => sub{
 
 post '/upload' => sub {
     my $fb = &check_auth();
-    if (!$fb) {
-        redirect '/about';
-    }
-    else {
-        my $user       = $fb->fetch('me');
-        my $file       = request->upload('datafile');
-        my $shared_str = '';
-        my @shared_arr;
-        unless (ref(params->{'shared'})){    # not a ref 
-            $shared_str = params->{'shared'};
-            @shared_arr = ($shared_str);
+    return redirect '/about' if !$fb;
+     my $user       = $fb->fetch('me');
+     my $file       = request->upload('datafile');
+     my $shared_str = '';
+     my @shared_arr;
+     unless (ref(params->{'shared'})){    # not a ref 
+         $shared_str = params->{'shared'};
+         @shared_arr = ($shared_str);
 
-        }
-        else {
-            $shared_str = join(',', @{params->{'shared'}});
-            @shared_arr = @{params->{'shared'}};
-        }
+     } else {
+         $shared_str = join(',', @{params->{'shared'}});
+         @shared_arr = @{params->{'shared'}};
+     }
+     debug(params);
+     $file->link_to(config->{'files_path'}->{'path'} . $file->filename);
 
-        $file->link_to(config->{'files_path'}->{'path'} . $file->filename);
+     #insert file info into database
+     my $sth = database->prepare(
+         'INSERT INTO files (filename, description, owner, size, expiration)
+          VALUES (?, ?, ?, ?, ?)'
+     );
 
-        #insert file info into database
-        my $sth = database->prepare(
-            'INSERT INTO files (filename, description, owner, size, expiration)
-             VALUES (?, ?, ?, ?, ?)'
+       my $gen                = Math::Random::MT::Perl->new();
+       my $dt = DateTime->now(time_zone => 'local');
+
+       #check how long the file should be kept, based on the users account
+       my $sth2 = database->prepare('
+          SELECT accounts.days
+          FROM accounts, users
+          WHERE users.id = ? AND accounts.id = users.account_type'
+       );
+       $sth2->execute(session('db_id'));
+       $dt->add(days=> eval{$sth2->fetchrow_hashref}->{'days'});  
+
+     $sth->execute($file->filename, params->{'comment'}, session('db_id'), $file->size ,DateTime::Format::MySQL->format_datetime($dt));
+     my $file_id = database->last_insert_id(undef, undef, undef, undef);
+
+     foreach my $user (split(',', $shared_str)) {
+          my $db_user_id = &get_database_user_id($user);
+
+        #insert shares into db
+        $sth = database->prepare(
+           'INSERT INTO shares (file_id, user_id)
+            VALUES (?, ?)'
         );
+        $sth->execute($file_id, $db_user_id) or debug($sth->errstr);
 
-          my $gen                = Math::Random::MT::Perl->new();
-          my $dt = DateTime->now(time_zone => 'local');
+        #insert values about new files
+        $sth = database->prepare(
+           'INSERT INTO new (file_id, user_id)
+            VALUES (?, ?)'
+        );
+        $sth->execute($file_id, $db_user_id) or debug($sth->errstr);
 
-          #check how long the file should be kept, based on the users account
-          my $sth2 = database->prepare('
-             SELECT accounts.days
-             FROM accounts, users
-             WHERE users.id = ? AND accounts.id = users.account_type'
-          );
-          $sth2->execute(session('db_id'));
-          $dt->add(days=> eval{$sth2->fetchrow_hashref}->{'days'});  
-
-        $sth->execute($file->filename, params->{'comment'}, session('db_id'), $file->size ,DateTime::Format::MySQL->format_datetime($dt));
-        my $file_id = database->last_insert_id(undef, undef, undef, undef);
-
-        foreach my $user (split(',', $shared_str)) {
-             my $db_user_id = &get_database_user_id($user);
-
-           #insert shares into db
-           $sth = database->prepare(
-              'INSERT INTO shares (file_id, user_id)
-               VALUES (?, ?)'
-           );
-           $sth->execute($file_id, $db_user_id) or debug($sth->errstr);
-
-           #insert values about new files
-           $sth = database->prepare(
-              'INSERT INTO new (file_id, user_id)
-               VALUES (?, ?)'
-           );
-           $sth->execute($file_id, $db_user_id) or debug($sth->errstr);
-
-            if (params->{'wallpost'}) {
-                my $response =
-                  $fb->add_post->to($user)->set_message(params->{'comment'})
-                  ->set_link_uri('http://dwonloader.kalteronline.org/details/' . $file_id . '?details=1')
-                  ->set_link_caption($file->filename)
-                  ->publish;
-            }
-        }
-    }
-    redirect '/me/shared';
+         if (params->{'wallpost'}) {
+             my $response =
+               $fb->add_post->to($user)->set_message(params->{'comment'})
+               ->set_link_uri('http://dwonloader.kalteronline.org/details/' . $file_id . '?details=1')
+               ->set_link_caption($file->filename)
+               ->publish;
+         }
+     }
+     redirect '/me/shared';
 };
 
 get '/details/:id' => sub {
     my $fb = Facebook::Graph->new(config->{facebook});
     if (!session('access_token')) {
-        redirect '/';
+        return redirect '/';
     }
     else {
        my $id  = params->{id};
@@ -463,7 +452,7 @@ get '/details/:id' => sub {
         }# if(params->{'details'})
         else {
             if (!params->{'action'}) { #just download
-                redirect &generate_temp($id);
+                return redirect &generate_temp($id);
             }
             else {
                 #check if users is owner of the file
@@ -504,7 +493,7 @@ get '/details/:id/edit' => sub {
     my $id = params->{'id'};
     my $fb = Facebook::Graph->new(config->{facebook});
     if (!session('access_token')) {
-        redirect '/';
+        return redirect '/';
     }
     else {
 
@@ -643,7 +632,7 @@ post '/details' => sub {
     );
 
     if ($result->{is_valid}) {
-        redirect &generate_temp($id);
+        return redirect &generate_temp($id);
     }
     else {
 
@@ -699,7 +688,7 @@ any '/setlang' => sub {
    my $fb = Facebook::Graph->new(config->{facebook});
    my $lang = params->{'lang'};
    if (!session('access_token')) {
-     redirect '/';
+     return redirect '/';
    }
    else {
       if($lang eq 'nl'){
